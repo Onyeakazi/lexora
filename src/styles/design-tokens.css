@@ -1,0 +1,100 @@
+/* Lexora Core Design Tokens & Theme Variables */
+:root {
+  /* Common Fonts */
+  --font-serif: 'Source Serif 4', Georgia, Cambria, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-brand: 'Cinzel', 'Source Serif 4', serif;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Radius & Borders */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-full: 9999px;
+
+  /* Safe Area Defaults */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+}
+
+/* Light Mode — Warm Paper & Clean Ink Dictionary Palette */
+[data-theme='light'] {
+  --bg-app: #f7f6f2;
+  --bg-surface: #ffffff;
+  --bg-surface-hover: #f1efea;
+  --bg-surface-active: #e8e5de;
+  --bg-subtle: #efece6;
+  --bg-accent-subtle: #eef2ff;
+
+  --text-primary: #191c21;
+  --text-secondary: #4a515d;
+  --text-muted: #737c8c;
+  --text-inverse: #ffffff;
+
+  --color-accent: #3730a3;
+  --color-accent-hover: #2e2a8c;
+  --color-accent-light: #6366f1;
+
+  --border-color: #e2ded6;
+  --border-color-strong: #c8c3b8;
+  --divider-color: #eae6de;
+
+  --badge-bg: #eef2ff;
+  --badge-text: #3730a3;
+  --badge-border: #c7d2fe;
+
+  --flag-gb-bg: #eff6ff;
+  --flag-gb-text: #1d4ed8;
+  --flag-us-bg: #fef2f2;
+  --flag-us-text: #b91c1c;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+
+  --toast-bg: #1f2937;
+  --toast-text: #f9fafb;
+}
+
+/* Dark Mode — Deep Charcoal Slate Dictionary Palette */
+[data-theme='dark'] {
+  --bg-app: #0f1115;
+  --bg-surface: #171a20;
+  --bg-surface-hover: #1e222b;
+  --bg-surface-active: #272d38;
+  --bg-subtle: #1c2028;
+  --bg-accent-subtle: #1e1b4b;
+
+  --text-primary: #f0f3f8;
+  --text-secondary: #a0aec0;
+  --text-muted: #64748b;
+  --text-inverse: #0f1115;
+
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  --color-accent-light: #a5b4fc;
+
+  --border-color: #262c36;
+  --border-color-strong: #384252;
+  --divider-color: #20252e;
+
+  --badge-bg: #1e1b4b;
+  --badge-text: #a5b4fc;
+  --badge-border: #3730a3;
+
+  --flag-gb-bg: #172554;
+  --flag-gb-text: #93c5fd;
+  --flag-us-bg: #450a0a;
+  --flag-us-text: #fca5a5;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
+
+  --toast-bg: #f8fafc;
+  --toast-text: #0f172a;
+}
