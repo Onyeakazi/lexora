@@ -186,7 +186,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                   justifyContent: 'space-between'
                 }}
               >
-                <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.05rem', fontWeight: 600 }}>{word}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', fontWeight: 600 }}>{word}</span>
                 <ArrowRight size={16} color="var(--text-muted)" />
               </div>
             ))}
@@ -212,7 +212,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem' }}>{item.term}</h3>
+                  <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.15rem' }}>{item.term}</h3>
                   {item.entry ? (
                     <span className="part-of-speech-tag">{item.entry.partOfSpeech.join(', ')}</span>
                   ) : (
@@ -248,7 +248,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                  <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+                  <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.2rem', color: 'var(--text-primary)' }}>
                     {entry.word}
                   </h3>
                   <span className="part-of-speech-tag">{entry.partOfSpeech.join(', ')}</span>
@@ -303,7 +303,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
                   <Clock size={16} color="var(--text-muted)" />
-                  <span style={{ fontFamily: 'var(--font-serif)', fontSize: '1.05rem', fontWeight: 600 }}>{item}</span>
+                  <span style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', fontWeight: 600 }}>{item}</span>
                 </div>
                 <ArrowRight size={16} color="var(--text-muted)" />
               </div>

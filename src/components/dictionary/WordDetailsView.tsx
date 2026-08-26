@@ -179,7 +179,7 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
             <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--badge-text)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
               THINK OF IT AS
             </span>
-            <blockquote style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.15rem', fontStyle: 'italic', color: 'var(--badge-text)' }}>
+            <blockquote style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '1.15rem', fontStyle: 'italic', color: 'var(--badge-text)' }}>
               "{mainDef.thinkOfItAs}"
             </blockquote>
           </div>
@@ -211,7 +211,7 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
                 <div style={{ marginBottom: '0.625rem' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Present Tense</span>
                   {wordEntry.usage.present.map((s, i) => (
-                    <p key={i} style={{ margin: '0.2rem 0', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>"{s}"</p>
+                    <p key={i} style={{ margin: '0.2rem 0', fontFamily: 'var(--font-sans)', fontStyle: 'italic' }}>"{s}"</p>
                   ))}
                 </div>
               )}
@@ -220,7 +220,7 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
                 <div style={{ marginBottom: '0.625rem' }}>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Past Tense</span>
                   {wordEntry.usage.past.map((s, i) => (
-                    <p key={i} style={{ margin: '0.2rem 0', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>"{s}"</p>
+                    <p key={i} style={{ margin: '0.2rem 0', fontFamily: 'var(--font-sans)', fontStyle: 'italic' }}>"{s}"</p>
                   ))}
                 </div>
               )}
@@ -229,7 +229,7 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
                 <div>
                   <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Future Tense</span>
                   {wordEntry.usage.future.map((s, i) => (
-                    <p key={i} style={{ margin: '0.2rem 0', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>"{s}"</p>
+                    <p key={i} style={{ margin: '0.2rem 0', fontFamily: 'var(--font-sans)', fontStyle: 'italic' }}>"{s}"</p>
                   ))}
                 </div>
               )}
@@ -270,7 +270,7 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
                 <span className="badge" style={{ marginBottom: '0.375rem' }}>
                   {ex.context}
                 </span>
-                <p style={{ margin: 0, fontFamily: 'var(--font-serif)', fontSize: '1.05rem', lineHeight: '1.5' }}>
+                <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '1.05rem', lineHeight: '1.5' }}>
                   "{ex.sentence}"
                 </p>
               </div>

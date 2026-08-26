@@ -40,7 +40,7 @@ export const TopAppBar: React.FC<TopAppBarProps> = ({
         {showBack && title && (
           <span
             style={{
-              fontFamily: 'var(--font-serif)',
+              fontFamily: 'var(--font-sans)',
               fontSize: '1.2rem',
               fontWeight: 600,
               textTransform: 'lowercase'

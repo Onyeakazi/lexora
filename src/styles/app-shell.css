@@ -58,7 +58,7 @@ html, body, #root {
 }
 
 .brand-name {
-  font-family: var(--font-brand);
+  font-family: var(--font-sans);
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: 0.05em;
@@ -152,7 +152,7 @@ html, body, #root {
 }
 
 .splash-title {
-  font-family: var(--font-brand);
+  font-family: var(--font-sans);
   font-size: 2.25rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -161,7 +161,7 @@ html, body, #root {
 }
 
 .splash-tagline {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-style: italic;
   font-size: 1.05rem;
   color: var(--text-secondary);

@@ -25,7 +25,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {greeting}
         </span>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.1rem', fontWeight: 700, margin: '0.25rem 0 0 0', lineHeight: '1.2' }}>
+        <h1 style={{ fontFamily: 'var(--font-sans)', fontSize: '2.1rem', fontWeight: 700, margin: '0.25rem 0 0 0', lineHeight: '1.2' }}>
           What word do you want to learn?
         </h1>
       </div>
@@ -67,13 +67,13 @@ export const HomeView: React.FC<HomeViewProps> = ({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.375rem' }}>
-              <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', margin: 0, fontWeight: 700 }}>
+              <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '2rem', margin: 0, fontWeight: 700 }}>
                 {wordOfTheDay.word}
               </h2>
               <span className="part-of-speech-tag">{wordOfTheDay.partOfSpeech.join(', ')}</span>
             </div>
 
-            <p style={{ fontFamily: 'var(--font-serif)', fontSize: '1.05rem', lineHeight: '1.55', margin: '0 0 1.25rem 0', color: 'var(--text-primary)' }}>
+            <p style={{ fontFamily: 'var(--font-sans)', fontSize: '1.05rem', lineHeight: '1.55', margin: '0 0 1.25rem 0', color: 'var(--text-primary)' }}>
               "{wordOfTheDay.definitions[0]?.dictionary}"
             </p>
 
@@ -113,7 +113,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                      <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.15rem', margin: 0 }}>
+                      <h3 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.15rem', margin: 0 }}>
                         {word}
                       </h3>
                       {entry && <span className="part-of-speech-tag">{entry.partOfSpeech.join(', ')}</span>}

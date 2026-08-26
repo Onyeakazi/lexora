@@ -34,7 +34,7 @@ export const SavedView: React.FC<SavedViewProps> = ({
         <div style={{ marginBottom: '1.25rem', color: 'var(--text-muted)' }}>
           <BookmarkX size={48} strokeWidth={1.5} />
         </div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.75rem', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.75rem', marginBottom: '0.5rem' }}>
           No saved words yet
         </h1>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', marginBottom: '2rem', maxWidth: '320px', margin: '0 auto 2rem auto' }}>
@@ -75,7 +75,7 @@ export const SavedView: React.FC<SavedViewProps> = ({
             >
               <div style={{ flex: 1 }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                  <h2 style={{ fontFamily: 'var(--font-serif)', fontSize: '1.25rem', margin: 0 }}>
+                  <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '1.25rem', margin: 0 }}>
                     {item.word}
                   </h2>
                   {wordEntry && (

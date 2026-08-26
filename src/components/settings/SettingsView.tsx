@@ -221,7 +221,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <strong style={{ fontFamily: 'var(--font-brand)', fontSize: '1.2rem' }}>Lexora</strong>
             <span className="badge">v1.0.0</span>
           </div>
-          <p style={{ margin: '0 0 0.75rem 0', fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
+          <p style={{ margin: '0 0 0.75rem 0', fontFamily: 'var(--font-sans)', fontStyle: 'italic', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
             Understand words. Use them. Say them.
           </p>
           <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>

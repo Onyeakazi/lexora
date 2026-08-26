@@ -1,10 +1,10 @@
 /* Lexora Core Design Tokens & Theme Variables */
 :root {
-  /* Common Fonts */
-  --font-serif: 'Source Serif 4', Georgia, Cambria, serif;
+  /* Common Fonts — Clean Sans-Serif Typography */
+  --font-serif: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  --font-brand: 'Cinzel', 'Source Serif 4', serif;
+  --font-brand: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -23,7 +23,7 @@
   --sar: env(safe-area-inset-right, 0px);
 }
 
-/* Light Mode — Warm Paper & Clean Ink Dictionary Palette */
+/* Light Mode — Clean Neutral Dictionary Palette */
 [data-theme='light'] {
   --bg-app: #f7f6f2;
   --bg-surface: #ffffff;
@@ -61,7 +61,7 @@
   --toast-text: #f9fafb;
 }
 
-/* Dark Mode — Deep Charcoal Slate Dictionary Palette */
+/* Dark Mode — Deep Slate Dictionary Palette */
 [data-theme='dark'] {
   --bg-app: #0f1115;
   --bg-surface: #171a20;

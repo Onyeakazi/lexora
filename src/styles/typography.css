@@ -1,4 +1,4 @@
-/* Lexora Traditional Dictionary Typography Styles */
+/* Lexora Sans-Serif Dictionary Typography Styles */
 
 body {
   font-family: var(--font-sans);
@@ -13,15 +13,16 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
+  font-family: var(--font-sans);
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .word-heading {
-  font-family: var(--font-serif);
+  font-family: var(--font-sans);
   font-size: 2.75rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.025em;
   line-height: 1.1;
   color: var(--text-primary);
 }
@@ -43,15 +44,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .dictionary-definition {
-  font-family: var(--font-serif);
-  font-size: 1.125rem;
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
   line-height: 1.6;
+  font-weight: 400;
   color: var(--text-primary);
 }
 
 .simple-explanation {
   font-family: var(--font-sans);
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.55;
   color: var(--text-primary);
 }
@@ -70,8 +72,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .part-of-speech-tag {
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: 1.1rem;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 600;
   color: var(--text-muted);
 }
