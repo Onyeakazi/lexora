@@ -3,6 +3,7 @@ import { SplashScreen } from './SplashScreen';
 import { TopAppBar } from './TopAppBar';
 import { BottomNavigation, TabRoute } from './BottomNavigation';
 import { Toast, ToastMessage } from '../common/Toast';
+import { PWAInstallBanner } from '../common/PWAInstallBanner';
 import { WordDetailsSkeleton } from '../common/SkeletonLoader';
 import { UserSettings } from '../../models/user';
 import { storageService } from '../../services/storageService';
@@ -219,6 +220,8 @@ export const AppShell: React.FC = () => {
       </main>
 
       <BottomNavigation activeTab={activeTab} onSelectTab={handleSelectTab} />
+
+      <PWAInstallBanner />
 
       <Toast toasts={toasts} onDismiss={dismissToast} />
     </div>
