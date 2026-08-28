@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, X, Clock, Trash2, ArrowRight, Loader2, BookOpen } from 'lucide-react';
+import { Search, X, Clock, Trash2, ArrowRight, Loader2, BookOpen, Mic } from 'lucide-react';
 import { WordEntry } from '../../models/word';
 import { dictionaryService } from '../../services/dictionaryService';
 import { storageService } from '../../services/storageService';
+import { speechRecognitionService } from '../../services/speechRecognitionService';
 
 interface SearchViewProps {
   initialQuery?: string;
@@ -19,6 +20,8 @@ export const SearchView: React.FC<SearchViewProps> = ({
   const [multiWordResults, setMultiWordResults] = useState<{ term: string; entry: WordEntry | null }[]>([]);
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,7 +42,6 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
     let isMounted = true;
 
-    // Instantly check local matching suggestions first
     const suggs = dictionaryService.getSuggestions(trimmed);
     setSuggestions(suggs);
 
@@ -85,20 +87,45 @@ export const SearchView: React.FC<SearchViewProps> = ({
     setRecentSearches([]);
   };
 
+  const handleToggleVoiceSearch = () => {
+    setVoiceError(null);
+    if (isVoiceListening) {
+      speechRecognitionService.stopListening();
+      setIsVoiceListening(false);
+      return;
+    }
+
+    speechRecognitionService.startVoiceSearch({
+      onResult: spokenWord => {
+        setQuery(spokenWord);
+        onSelectWord(spokenWord);
+      },
+      onError: err => {
+        setVoiceError(err);
+      },
+      onStateChange: listening => {
+        setIsVoiceListening(listening);
+      }
+    });
+  };
+
   return (
     <div className="content-container">
-      {/* SEARCH BAR */}
+      {/* SEARCH BAR WITH VOICE SEARCH */}
       <form onSubmit={handleSearchSubmit} style={{ marginBottom: '1.25rem' }}>
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             backgroundColor: 'var(--bg-surface)',
-            border: '1.5px solid var(--border-color-strong)',
+            border: isVoiceListening
+              ? '1.5px solid #ef4444'
+              : '1.5px solid var(--border-color-strong)',
             borderRadius: 'var(--radius-md)',
             padding: '0.625rem 0.875rem',
             gap: '0.625rem',
-            boxShadow: 'var(--shadow-sm)'
+            boxShadow: isVoiceListening ? '0 0 0 4px rgba(239, 68, 68, 0.15)' : 'var(--shadow-sm)',
+            transition: 'all 200ms ease'
           }}
         >
           {isLoading ? (
@@ -112,7 +139,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
             type="search"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search any word in English..."
+            placeholder={isVoiceListening ? 'Listening... Speak a word!' : 'Search any word in English...'}
             aria-label="Search dictionary"
             autoCapitalize="off"
             autoCorrect="off"
@@ -126,6 +153,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
               color: 'var(--text-primary)'
             }}
           />
+
           {query && (
             <button
               type="button"
@@ -139,10 +167,40 @@ export const SearchView: React.FC<SearchViewProps> = ({
               <X size={18} />
             </button>
           )}
+
+          {/* VOICE SEARCH MIC BUTTON */}
+          <button
+            type="button"
+            onClick={handleToggleVoiceSearch}
+            aria-label="Voice Search"
+            style={{
+              border: 'none',
+              background: isVoiceListening ? '#ef4444' : 'var(--bg-subtle)',
+              color: isVoiceListening ? '#ffffff' : 'var(--color-accent)',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: isVoiceListening ? '0 0 0 6px rgba(239, 68, 68, 0.25)' : 'none',
+              transition: 'all 200ms ease'
+            }}
+          >
+            <Mic size={18} style={{ animation: isVoiceListening ? 'pulse 1s infinite' : 'none' }} />
+          </button>
         </div>
       </form>
 
-      {/* DIRECT SEARCH ACTION CARD (Whenever user types any term) */}
+      {/* VOICE ERROR MSG */}
+      {voiceError && (
+        <div style={{ marginBottom: '1rem', padding: '0.625rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', color: '#ef4444', fontSize: '0.85rem' }}>
+          {voiceError}
+        </div>
+      )}
+
+      {/* DIRECT SEARCH ACTION CARD */}
       {query.trim() && !query.includes(' ') && (
         <div
           onClick={() => handleSelectSuggestion(query.trim())}

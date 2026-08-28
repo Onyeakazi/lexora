@@ -48,7 +48,6 @@ class SpeechRecognitionService {
         const transcript = event.results[0][0].transcript.trim().toLowerCase();
         const target = targetWord.trim().toLowerCase();
 
-        // Calculate match closeness
         const isExact = transcript === target || transcript.includes(target) || target.includes(transcript);
 
         if (isExact) {
@@ -106,6 +105,68 @@ class SpeechRecognitionService {
         state: 'unsupported',
         message: 'Failed to start speech recognition.'
       });
+      return () => {};
+    }
+  }
+
+  public startVoiceSearch({
+    onResult,
+    onError,
+    onStateChange
+  }: {
+    onResult: (spokenWord: string) => void;
+    onError?: (err: string) => void;
+    onStateChange?: (isListening: boolean) => void;
+  }): () => void {
+    if (!this.isSupported()) {
+      onError?.('Voice search is not supported in this browser.');
+      return () => {};
+    }
+
+    const SpeechRecognitionClass =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    try {
+      this.recognition = new SpeechRecognitionClass();
+      this.recognition.continuous = false;
+      this.recognition.interimResults = false;
+      this.recognition.lang = 'en-US';
+
+      onStateChange?.(true);
+
+      this.recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript.trim().replace(/[\.\?]$/, '');
+        onStateChange?.(false);
+        if (transcript) {
+          onResult(transcript);
+        }
+      };
+
+      this.recognition.onerror = (event: any) => {
+        onStateChange?.(false);
+        if (event.error === 'not-allowed') {
+          onError?.('Microphone access denied. Please allow microphone access to search by voice.');
+        } else if (event.error !== 'no-speech') {
+          onError?.(`Voice search error: ${event.error}`);
+        }
+      };
+
+      this.recognition.onend = () => {
+        onStateChange?.(false);
+      };
+
+      this.recognition.start();
+
+      return () => {
+        if (this.recognition) {
+          try {
+            this.recognition.stop();
+          } catch (e) {}
+        }
+      };
+    } catch (e) {
+      onStateChange?.(false);
+      onError?.('Failed to start voice search.');
       return () => {};
     }
   }
