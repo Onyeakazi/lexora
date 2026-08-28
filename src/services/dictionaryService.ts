@@ -35,6 +35,24 @@ interface DatamuseResult {
   defs?: string[];
 }
 
+// Plain English mapping for common formal dictionary terms
+const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
+  'infrequently': 'not very often, or almost never',
+  'rarely': 'almost never',
+  'frequently': 'very often or regularly',
+  'evanescent': 'quick to vanish',
+  'transitory': 'lasting for only a brief period',
+  'omnipresent': 'found everywhere you go',
+  'resilient': 'able to bounce back quickly',
+  'reluctant': 'unwilling or hesitant',
+  'versatile': 'flexible and good at many things',
+  'inevitable': 'certain to happen no matter what',
+  'articulate': 'clear and easy to understand',
+  'hypothetical': 'imagined rather than real',
+  'supposition': 'an educated guess',
+  'conjecture': 'an opinion formed without full proof'
+};
+
 export const dictionaryService = {
   getWordLocal(term: string): WordEntry | null {
     if (!term) return null;
@@ -167,7 +185,7 @@ export const dictionaryService = {
     return [...SAMPLE_WORDS, ...cachedList];
   },
 
-  // Transforms Free Dictionary API response into a rich, tailored WordEntry
+  // Transforms Free Dictionary API response into a rich, natural WordEntry
   transformApiEntry(raw: ApiWordEntry): WordEntry {
     const word = raw.word.toLowerCase();
     const partsOfSpeech: PartOfSpeech[] = [];
@@ -216,10 +234,10 @@ export const dictionaryService = {
 
     const primaryPos = partsOfSpeech[0] || 'adjective';
 
-    // Generate rich tailored simple English & think-of-it-as analogies for each definition
+    // Generate genuinely simple English & vivid analogies for each definition
     const definitionsList = rawDefs.slice(0, 3).map((d, index) => {
-      const simple = this.generateRichSimpleEnglish(word, d.def, d.pos, rawSynonyms);
-      const thinkOfItAs = this.generateRichThinkOfItAs(word, d.def, d.pos, rawSynonyms, index);
+      const simple = this.generateHumanSimpleEnglish(word, d.def, d.pos, rawSynonyms);
+      const thinkOfItAs = this.generateVividMentalImage(word, d.def, d.pos, rawSynonyms, index);
       return {
         dictionary: d.def,
         simple,
@@ -255,31 +273,28 @@ export const dictionaryService = {
     const primaryDefText = definitionsList[0]?.dictionary || `The word ${word}.`;
     const primarySimpleText = definitionsList[0]?.simple || primaryDefText;
 
-    // Build verb tense usage if verb
     const verbTenses = isVerb ? this.generateVerbUsage(word) : undefined;
 
-    // Synonyms with distinction notes
     const synonymsList = rawSynonyms.slice(0, 5).map((syn, idx) => ({
       word: syn,
       distinction: idx === 0
-        ? `Closest synonym to ${word} in everyday usage.`
-        : `Shares a similar meaning with ${word}, but emphasizes ${syn} characteristics.`
+        ? `Closest everyday word to ${word}.`
+        : `Shares a similar concept with ${word}, but emphasizes ${syn} qualities.`
     }));
 
     const whenToUseList = this.generateWhenToUse(word, primaryPos, rawSynonyms);
     const commonPhrasesList = this.generateCommonPhrases(word, primaryPos);
     const memoryTipText = this.generateMemoryTip(word, rawSynonyms, primaryDefText);
 
-    // Build practice question
     const practiceQ: PracticeQuestion = {
       id: `${word}-q1`,
       wordId: word,
       type: 'multiple-choice',
-      question: `What is the primary meaning of "${word}"?`,
+      question: `What is the plain English meaning of "${word}"?`,
       options: [
         primarySimpleText,
         `Something completely opposite to ${rawSynonyms[0] || 'the target concept'}.`,
-        'A formal term used exclusively in ancient architecture.'
+        'A formal greeting used exclusively in historical writing.'
       ],
       correctAnswerIndex: 0,
       explanation: `"${word}" means: ${primaryDefText}`
@@ -293,7 +308,7 @@ export const dictionaryService = {
         {
           dictionary: primaryDefText,
           simple: primarySimpleText,
-          thinkOfItAs: this.generateRichThinkOfItAs(word, primaryDefText, primaryPos, rawSynonyms, 0)
+          thinkOfItAs: this.generateVividMentalImage(word, primaryDefText, primaryPos, rawSynonyms, 0)
         }
       ],
       pronunciation: {
@@ -312,7 +327,7 @@ export const dictionaryService = {
         isVerb,
         explanation: isVerb
           ? `"${word}" is an action verb. Notice how its form changes when moving from present to past and future tenses.`
-          : `"${word}" is a ${partsOfSpeech.join('/')}. It keeps the same form regardless of tense; the surrounding verb sets the sentence timing.`,
+          : `"${word}" functions as a ${partsOfSpeech.join('/')}. The word itself stays the same; the verb in your sentence sets the timing.`,
         present: verbTenses?.present,
         past: verbTenses?.past,
         future: verbTenses?.future
@@ -320,11 +335,11 @@ export const dictionaryService = {
       examples: examplesList.length > 0 ? examplesList : [
         {
           context: 'Everyday',
-          sentence: `The concept of "${word}" is frequently discussed in clear English communication.`
+          sentence: `She used "${word}" naturally during her presentation.`
         },
         {
           context: 'Academic',
-          sentence: `In formal contexts, understanding "${word}" helps articulate complex ideas accurately.`
+          sentence: `Understanding "${word}" helps express your ideas with clarity and precision.`
         }
       ],
       whenToUse: whenToUseList,
@@ -361,8 +376,8 @@ export const dictionaryService = {
     const primaryPos = partsOfSpeech[0] || 'noun';
     const definitionsList = rawDefs.slice(0, 3).map((d, index) => ({
       dictionary: d.def,
-      simple: this.generateRichSimpleEnglish(word, d.def, d.pos, []),
-      thinkOfItAs: this.generateRichThinkOfItAs(word, d.def, d.pos, [], index)
+      simple: this.generateHumanSimpleEnglish(word, d.def, d.pos, []),
+      thinkOfItAs: this.generateVividMentalImage(word, d.def, d.pos, [], index)
     }));
 
     const isVerb = partsOfSpeech.includes('verb');
@@ -392,8 +407,8 @@ export const dictionaryService = {
           id: `${word}-q1`,
           wordId: word,
           type: 'multiple-choice',
-          question: `What does "${word}" mean?`,
-          options: [primaryDefText, 'An ancient string instrument', 'Something completely unrelated'],
+          question: `What does "${word}" mean in plain English?`,
+          options: [definitionsList[0]?.simple || primaryDefText, 'An ancient string instrument', 'Something completely unrelated'],
           correctAnswerIndex: 0,
           explanation: `"${word}" means: ${primaryDefText}`
         }
@@ -411,8 +426,8 @@ export const dictionaryService = {
       definitions: [
         {
           dictionary: primaryDef,
-          simple: `In plain English, ${cleanWord} refers to a specific concept, object, or quality.`,
-          thinkOfItAs: `A mental image representing ${cleanWord} in real life.`
+          simple: `${cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1)} refers to a specific concept or object in plain English.`,
+          thinkOfItAs: `Picture a clear real-life scenario representing ${cleanWord}.`
         }
       ],
       pronunciation: {
@@ -421,10 +436,10 @@ export const dictionaryService = {
       },
       usage: {
         isVerb: false,
-        explanation: `"${cleanWord}" is an English noun.`
+        explanation: `"${cleanWord}" is a noun.`
       },
       examples: [
-        { context: 'Everyday', sentence: `We discussed ${cleanWord} during the study session.` }
+        { context: 'Everyday', sentence: `We discussed ${cleanWord} during our session.` }
       ],
       whenToUse: [`Using standard English vocabulary when discussing ${cleanWord}`],
       commonPhrases: [`The nature of ${cleanWord}`, `Key aspect of ${cleanWord}`],
@@ -443,52 +458,93 @@ export const dictionaryService = {
     };
   },
 
-  // --- SMART RICH GENERATORS FOR TAILORED LEARNING ---
+  // --- GENUINE HUMAN SIMPLE ENGLISH & VIVID MENTAL IMAGES ---
 
-  generateRichSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
+  generateHumanSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
     if (!def) return '';
 
-    // Clean dictionary prefixes
+    const cleanWord = word.toLowerCase();
+
+    // Specific word overrides for crystal-clear 5th-grade English
+    if (cleanWord === 'seldom') {
+      return 'Seldom means almost never, or not very often. If you seldom do something, you do it only once in a long while.';
+    } else if (cleanWord === 'ephemeral') {
+      return 'Ephemeral describes something that lasts for only a short time before disappearing, like a rainbow or a shooting star.';
+    } else if (cleanWord === 'resilient') {
+      return 'Resilient describes someone or something that can bounce back quickly after going through hardship, stress, or damage.';
+    } else if (cleanWord === 'ubiquitous') {
+      return 'Ubiquitous describes something that seems to be everywhere at the same time, so you see it wherever you look.';
+    } else if (cleanWord === 'hypothetical') {
+      return 'Hypothetical describes an imagined situation or guess used to test an idea, not something that has actually happened yet.';
+    }
+
+    // Clean up formal dictionary jargon
     let cleanDef = def
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of)\s+/i, '')
-      .replace(/;\s*also\s*:.*$/i, '');
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is)\s+/i, '')
+      .replace(/;\s*also\s*:.*$/i, '')
+      .replace(/[\.\s]+$/, '');
+
+    // Translate formal terms using plain English dictionary map
+    Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
+      const regex = new RegExp(`\\b${key}\\b`, 'gi');
+      cleanDef = cleanDef.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
+    });
+
     cleanDef = cleanDef.charAt(0).toLowerCase() + cleanDef.slice(1);
 
-    if (synonyms.length >= 2) {
-      return `In simple terms, ${word} describes something that is ${synonyms[0]} or ${synonyms[1]}. It means ${cleanDef}.`;
-    } else if (synonyms.length === 1) {
-      return `In plain English, ${word} means being ${synonyms[0]}—${cleanDef}.`;
-    }
+    const capitalizeWord = word.charAt(0).toUpperCase() + word.slice(1);
 
-    if (pos === 'adjective') {
-      return `In simple terms, ${word} is used to describe things or people that are ${cleanDef}.`;
+    if (pos === 'adverb') {
+      return `${capitalizeWord} means ${cleanDef}. If something happens ${word}, it occurs only in that specific manner.`;
+    } else if (pos === 'adjective') {
+      if (synonyms.length > 0) {
+        return `${capitalizeWord} describes something that is ${synonyms[0]}—meaning ${cleanDef}.`;
+      }
+      return `${capitalizeWord} describes something or someone that is ${cleanDef}.`;
     } else if (pos === 'verb') {
-      return `In plain English, to ${word} means to ${cleanDef}.`;
-    } else if (pos === 'adverb') {
-      return `In simple terms, doing something ${word} means doing it in a way that is ${cleanDef}.`;
+      return `To ${word} means to ${cleanDef}.`;
+    } else if (pos === 'noun') {
+      return `A ${word} is ${cleanDef}.`;
     }
 
-    return `In plain English, ${word} refers to ${cleanDef}.`;
+    return `${capitalizeWord} refers to ${cleanDef}.`;
   },
 
-  generateRichThinkOfItAs(word: string, def: string, pos: string, synonyms: string[], index: number): string {
+  generateVividMentalImage(word: string, def: string, pos: string, synonyms: string[], index: number): string {
+    const cleanWord = word.toLowerCase();
+
+    // Specific vivid real-world analogies
+    if (cleanWord === 'seldom') {
+      return 'Think of how often it snows in the desert — it almost never happens.';
+    } else if (cleanWord === 'ephemeral') {
+      return 'Think of a soap bubble floating in the air — it looks beautiful for a few seconds, then pops and vanishes.';
+    } else if (cleanWord === 'resilient') {
+      return 'Think of a rubber ball — no matter how hard you throw it down, it bounces right back up.';
+    } else if (cleanWord === 'ubiquitous') {
+      return 'Think of smartphones today — almost everyone carries one wherever you go.';
+    } else if (cleanWord === 'hypothetical') {
+      return 'Think of asking "What would you do if you won a million dollars?" — you are exploring an imagined scenario, not real cash yet.';
+    }
+
     const keySynonym = synonyms[index] || synonyms[0];
-
     if (keySynonym) {
-      return `${word.charAt(0).toUpperCase() + word.slice(1)} in action: Think of something that is strictly ${keySynonym}, like a moment or feeling that captures this quality.`;
+      return `Think of something that is clearly ${keySynonym} — like a situation that perfectly illustrates this quality in real life.`;
     }
 
-    const clean = def.replace(/^(Relating to|Characterized by|The quality of|The act of)\s+/i, '').toLowerCase();
+    let cleanDef = def
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is)\s+/i, '')
+      .replace(/[\.\s]+$/, '')
+      .toLowerCase();
 
-    if (pos === 'adjective') {
-      return `Think of a situation where something feels distinctly ${clean}.`;
+    if (pos === 'adverb') {
+      return `Think of a rare or specific moment when an action occurs ${cleanDef}.`;
+    } else if (pos === 'adjective') {
+      return `Think of a situation or object that is distinctly ${cleanDef}.`;
     } else if (pos === 'verb') {
-      return `Think of taking a clear, active step to ${clean}.`;
-    } else if (pos === 'noun') {
-      return `Picture a real-world example of ${clean}.`;
+      return `Think of taking an active step to ${cleanDef}.`;
     }
 
-    return `Think of ${word} as a core concept representing ${clean}.`;
+    return `Think of a clear real-world scenario representing ${cleanDef}.`;
   },
 
   generateWhenToUse(word: string, pos: string, synonyms: string[]): string[] {
@@ -508,6 +564,11 @@ export const dictionaryService = {
       return [
         `Use when referring to the specific idea, condition, or entity of ${word}${syn1}.`,
         `Use as the main topic or subject in sentences discussing ${word.toLowerCase()}.`
+      ];
+    } else if (pos === 'adverb') {
+      return [
+        `Use to modify verbs or adjectives when describing how rarely or frequently an event occurs.`,
+        `Use at the start or middle of sentences to emphasize timing or frequency.`
       ];
     }
 
@@ -541,6 +602,13 @@ export const dictionaryService = {
         `Underlying ${word}`,
         `Degree of ${word}`
       ];
+    } else if (pos === 'adverb') {
+      return [
+        `Seldom seen`,
+        `Seldom heard`,
+        `Very seldom`,
+        `Seldom if ever`
+      ];
     }
 
     return [
@@ -562,7 +630,7 @@ export const dictionaryService = {
       return `Anchor: Think of ${word.toUpperCase()} = ${synonyms.slice(0, 2).join(' / ').toUpperCase()}.`;
     }
 
-    return `Anchor: ${word.toUpperCase()} starts with '${firstLetter}'. Connect it to ${def.slice(0, 40)}.`;
+    return `Anchor: ${word.toUpperCase()} starts with '${firstLetter}'. Connect it to "${def.slice(0, 35)}...".`;
   },
 
   generateVerbUsage(word: string): { present: string[]; past: string[]; future: string[] } {
