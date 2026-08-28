@@ -35,8 +35,9 @@ interface DatamuseResult {
   defs?: string[];
 }
 
+// Extensive Plain-English dictionary map for translating formal dictionary jargon into 5th-grade everyday English
 const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
-  'infrequently': 'not very often, or almost never',
+  'infrequently': 'not very often',
   'rarely': 'almost never',
   'frequently': 'very often or regularly',
   'evanescent': 'quick to vanish',
@@ -57,7 +58,40 @@ const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
   'benevolent': 'kind and generous toward others',
   'audacious': 'bold and daring',
   'lethargic': 'feeling sluggish and lacking energy',
-  'scrutiny': 'close and critical inspection'
+  'scrutiny': 'close and critical inspection',
+  'withstand': 'stay strong through',
+  'adversity': 'hard times or difficulty',
+  'difficult conditions': 'hard situations',
+  'pertaining to': 'about',
+  'relating to': 'about',
+  'characterized by': 'known for',
+  'having the nature of': 'being like',
+  'state of being': 'feeling of being',
+  'used to describe': 'means',
+  'in a manner that is': 'in a way that is',
+  'precision': 'exactness',
+  'fluency': 'smoothness',
+  'hesitant': 'not sure',
+  'adaptable': 'able to change easily',
+  'unavoidable': 'cannot be stopped',
+  'inspection': 'checking',
+  'temporary': 'short-lived',
+  'duration': 'length of time',
+  'extent': 'how much',
+  'manifest': 'show clearly',
+  'convey': 'share',
+  'utilize': 'use',
+  'employ': 'use',
+  'facilitate': 'make easier',
+  'commence': 'start',
+  'terminate': 'end',
+  'subsequent': 'later',
+  'prior to': 'before',
+  'magnitude': 'size',
+  'endeavor': 'try hard',
+  'persevere': 'keep going',
+  'paramount': 'top priority',
+  'predominant': 'main'
 };
 
 export const dictionaryService = {
@@ -241,8 +275,8 @@ export const dictionaryService = {
     const primaryPos = partsOfSpeech[0] || 'adjective';
 
     const definitionsList = rawDefs.slice(0, 3).map((d, index) => {
-      const simple = this.generateHumanSimpleEnglish(word, d.def, d.pos, rawSynonyms);
-      const thinkOfItAs = this.generateVividMentalImage(word, d.def, d.pos, rawSynonyms, index);
+      const simple = this.generatePureSimpleEnglish(word, d.def, d.pos, rawSynonyms);
+      const thinkOfItAs = this.generatePureVividMentalImage(word, d.def, d.pos, rawSynonyms, index);
       return {
         dictionary: d.def,
         simple,
@@ -312,7 +346,7 @@ export const dictionaryService = {
         {
           dictionary: primaryDefText,
           simple: primarySimpleText,
-          thinkOfItAs: this.generateVividMentalImage(word, primaryDefText, primaryPos, rawSynonyms, 0)
+          thinkOfItAs: this.generatePureVividMentalImage(word, primaryDefText, primaryPos, rawSynonyms, 0)
         }
       ],
       pronunciation: {
@@ -380,8 +414,8 @@ export const dictionaryService = {
     const primaryPos = partsOfSpeech[0] || 'noun';
     const definitionsList = rawDefs.slice(0, 3).map((d, index) => ({
       dictionary: d.def,
-      simple: this.generateHumanSimpleEnglish(word, d.def, d.pos, []),
-      thinkOfItAs: this.generateVividMentalImage(word, d.def, d.pos, [], index)
+      simple: this.generatePureSimpleEnglish(word, d.def, d.pos, []),
+      thinkOfItAs: this.generatePureVividMentalImage(word, d.def, d.pos, [], index)
     }));
 
     const isVerb = partsOfSpeech.includes('verb');
@@ -462,39 +496,40 @@ export const dictionaryService = {
     };
   },
 
-  // --- DYNAMIC & CONCEPTUAL SIMPLE ENGLISH GENERATOR ---
-
-  generateHumanSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
+  // PURE SIMPLE ENGLISH ENGINE — NO DICTIONARY JARGON RE-USED
+  generatePureSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
     if (!def) return '';
 
     const cleanWord = word.toLowerCase();
 
-    // Specific high-frequency word mappings
+    // Explicit 5th-grade translations for core terms
     if (cleanWord === 'seldom') {
-      return 'Seldom means almost never, or not very often. If you seldom do something, you do it only once in a long while.';
+      return 'Seldom means almost never, or not very often. If you seldom do something, it happens only once in a long while.';
     } else if (cleanWord === 'ephemeral') {
-      return 'Ephemeral describes something that lasts for only a short time before disappearing, like a rainbow or a shooting star.';
+      return 'Ephemeral describes something that exists for only a brief moment before fading away, like a rainbow or a shooting star.';
     } else if (cleanWord === 'resilient') {
-      return 'Resilient describes someone or something that can bounce back quickly after going through hardship, stress, or damage.';
+      return 'Resilient describes someone or something that can stay strong and bounce back quickly after going through hard times.';
     } else if (cleanWord === 'ubiquitous') {
       return 'Ubiquitous describes something that seems to be everywhere at the same time, so you see it wherever you look.';
     } else if (cleanWord === 'hypothetical') {
       return 'Hypothetical describes an imagined situation or guess used to test an idea, not something that has actually happened yet.';
     } else if (cleanWord === 'meticulous') {
-      return 'Meticulous describes someone who pays extreme attention to tiny details to ensure everything is perfect and error-free.';
+      return 'Meticulous describes someone who pays extreme attention to tiny details to ensure everything is clean and error-free.';
     } else if (cleanWord === 'diligent') {
-      return 'Diligent describes a worker or student who shows persistent, careful effort in completing their tasks.';
+      return 'Diligent describes a worker or student who shows steady, careful effort in completing their work.';
     } else if (cleanWord === 'eloquent') {
-      return 'Eloquent describes speech or writing that is expressive, fluent, and powerful enough to move an audience.';
+      return 'Eloquent describes speech or writing that is clear, expressive, and powerful enough to move an audience.';
     } else if (cleanWord === 'pragmatic') {
-      return 'Pragmatic describes a mindset focused on practical solutions that actually work, rather than theoretical or ideal rules.';
+      return 'Pragmatic describes a mindset focused on real solutions that actually work, rather than ideal rules.';
     }
 
+    // Step 1: Clean formal dictionary prefixes
     let cleanDef = def
       .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is)\s+/i, '')
       .replace(/;\s*also\s*:.*$/i, '')
       .replace(/[\.\s]+$/, '');
 
+    // Step 2: Translate formal dictionary terms into everyday words
     Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
       const regex = new RegExp(`\\b${key}\\b`, 'gi');
       cleanDef = cleanDef.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
@@ -503,11 +538,13 @@ export const dictionaryService = {
     cleanDef = cleanDef.charAt(0).toLowerCase() + cleanDef.slice(1);
     const capitalizeWord = word.charAt(0).toUpperCase() + word.slice(1);
 
+    // Step 3: Format clean, human, non-repetitive simple English sentences
     if (pos === 'adverb') {
-      return `${capitalizeWord} means doing something in a way that is ${cleanDef}.`;
+      return `${capitalizeWord} means doing something in a way that is ${cleanDef}. It describes an action that occurs only under those specific conditions.`;
     } else if (pos === 'adjective') {
-      if (synonyms.length > 0) {
-        return `${capitalizeWord} describes something that is ${synonyms[0]}—meaning ${cleanDef}.`;
+      if (synonyms.length > 0 && synonyms[0] !== cleanWord) {
+        const simpleSyn = FORMAL_TO_SIMPLE_MAP[synonyms[0]] || synonyms[0];
+        return `${capitalizeWord} describes something that is ${simpleSyn}—meaning ${cleanDef}.`;
       }
       return `${capitalizeWord} describes something or someone that is ${cleanDef}.`;
     } else if (pos === 'verb') {
@@ -519,8 +556,8 @@ export const dictionaryService = {
     return `${capitalizeWord} refers to ${cleanDef}.`;
   },
 
-  // DYNAMIC CATEGORICAL MENTAL IMAGE ENGINE
-  generateVividMentalImage(word: string, def: string, pos: string, synonyms: string[], index: number): string {
+  // PURE VIVID MENTAL IMAGE ENGINE — ZERO DICTIONARY REUSE
+  generatePureVividMentalImage(word: string, def: string, pos: string, synonyms: string[], index: number): string {
     const cleanWord = word.toLowerCase();
     const lowerDef = def.toLowerCase();
 
@@ -546,7 +583,7 @@ export const dictionaryService = {
     }
 
     // 1. Time / Frequency / Duration
-    if (lowerDef.includes('time') || lowerDef.includes('short') || lowerDef.includes('long') || lowerDef.includes('brief') || lowerDef.includes('often') || lowerDef.includes('rare')) {
+    if (lowerDef.includes('time') || lowerDef.includes('short') || lowerDef.includes('long') || lowerDef.includes('brief') || lowerDef.includes('often') || lowerDef.includes('rare') || lowerDef.includes('infrequent')) {
       return `Think of a fleeting moment in time — something that happens in a flash and passes before you know it.`;
     }
 
@@ -576,7 +613,7 @@ export const dictionaryService = {
     }
 
     const keySynonym = synonyms[index] || synonyms[0];
-    if (keySynonym) {
+    if (keySynonym && keySynonym !== cleanWord) {
       return `Picture a real-life situation that is clearly ${keySynonym} — capturing this exact quality when you see it.`;
     }
 
@@ -584,6 +621,12 @@ export const dictionaryService = {
       .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is)\s+/i, '')
       .replace(/[\.\s]+$/, '')
       .toLowerCase();
+
+    // Translate cleanDef formal words into simple words
+    Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
+      const regex = new RegExp(`\\b${key}\\b`, 'gi');
+      cleanDef = cleanDef.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
+    });
 
     if (pos === 'adverb') {
       return `Think of a specific moment when an action happens ${cleanDef}.`;
