@@ -53,7 +53,7 @@ export const dictionaryService = {
     if (!term || !term.trim()) return null;
     const cleanTerm = term.trim().toLowerCase();
 
-    // 1. Return local sync match if cached
+    // 1. Local sync match
     const local = this.getWordLocal(cleanTerm);
     if (local) return local;
 
@@ -72,7 +72,7 @@ export const dictionaryService = {
       console.warn('Free Dictionary API lookup error', e);
     }
 
-    // 3. Backup: Try Datamuse API
+    // 3. Backup: Datamuse API
     try {
       const dmResponse = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(cleanTerm)}&md=d&max=1`);
       if (dmResponse.ok) {
@@ -87,7 +87,7 @@ export const dictionaryService = {
       console.warn('Datamuse API fallback error', e);
     }
 
-    // 4. Generate structured fallback for valid English word so lookup never fails
+    // 4. Fallback generator
     const fallback = this.generateFallbackEntry(cleanTerm);
     this.cacheWord(cleanTerm, fallback);
     return fallback;
@@ -167,13 +167,14 @@ export const dictionaryService = {
     return [...SAMPLE_WORDS, ...cachedList];
   },
 
+  // Transforms Free Dictionary API response into a rich, tailored WordEntry
   transformApiEntry(raw: ApiWordEntry): WordEntry {
     const word = raw.word.toLowerCase();
     const partsOfSpeech: PartOfSpeech[] = [];
-    const definitionsList: { dictionary: string; simple: string; thinkOfItAs?: string }[] = [];
-    const synonymsList: { word: string; distinction?: string }[] = [];
-    const antonymsList: string[] = [];
+    const rawSynonyms: string[] = [];
+    const rawAntonyms: string[] = [];
     const examplesList: { context: 'Conversation' | 'Work' | 'Academic' | 'Everyday'; sentence: string }[] = [];
+    const rawDefs: { pos: string; def: string; example?: string }[] = [];
 
     raw.meanings.forEach(m => {
       const pos = m.partOfSpeech.toLowerCase() as PartOfSpeech;
@@ -183,14 +184,7 @@ export const dictionaryService = {
 
       m.definitions.forEach(def => {
         if (def.definition) {
-          const simple = this.generateSimpleEnglish(def.definition);
-          const thinkOfItAs = this.generateThinkOfItAs(word, def.definition);
-
-          definitionsList.push({
-            dictionary: def.definition,
-            simple,
-            thinkOfItAs
-          });
+          rawDefs.push({ pos, def: def.definition, example: def.example });
         }
 
         if (def.example) {
@@ -203,31 +197,37 @@ export const dictionaryService = {
         }
 
         def.synonyms?.forEach(s => {
-          if (!synonymsList.some(item => item.word.toLowerCase() === s.toLowerCase())) {
-            synonymsList.push({ word: s });
-          }
+          if (!rawSynonyms.includes(s.toLowerCase())) rawSynonyms.push(s.toLowerCase());
         });
 
         def.antonyms?.forEach(a => {
-          if (!antonymsList.includes(a)) {
-            antonymsList.push(a);
-          }
+          if (!rawAntonyms.includes(a.toLowerCase())) rawAntonyms.push(a.toLowerCase());
         });
       });
 
       m.synonyms?.forEach(s => {
-        if (!synonymsList.some(item => item.word.toLowerCase() === s.toLowerCase())) {
-          synonymsList.push({ word: s });
-        }
+        if (!rawSynonyms.includes(s.toLowerCase())) rawSynonyms.push(s.toLowerCase());
       });
 
       m.antonyms?.forEach(a => {
-        if (!antonymsList.includes(a)) {
-          antonymsList.push(a);
-        }
+        if (!rawAntonyms.includes(a.toLowerCase())) rawAntonyms.push(a.toLowerCase());
       });
     });
 
+    const primaryPos = partsOfSpeech[0] || 'adjective';
+
+    // Generate rich tailored simple English & think-of-it-as analogies for each definition
+    const definitionsList = rawDefs.slice(0, 3).map((d, index) => {
+      const simple = this.generateRichSimpleEnglish(word, d.def, d.pos, rawSynonyms);
+      const thinkOfItAs = this.generateRichThinkOfItAs(word, d.def, d.pos, rawSynonyms, index);
+      return {
+        dictionary: d.def,
+        simple,
+        thinkOfItAs
+      };
+    });
+
+    // Parse Audio & IPA
     let britishIpa = raw.phonetic;
     let americanIpa = raw.phonetic;
     let britishAudio = '';
@@ -252,20 +252,37 @@ export const dictionaryService = {
     });
 
     const isVerb = partsOfSpeech.includes('verb');
-    const primaryDef = definitionsList[0]?.dictionary || `The word ${word}.`;
+    const primaryDefText = definitionsList[0]?.dictionary || `The word ${word}.`;
+    const primarySimpleText = definitionsList[0]?.simple || primaryDefText;
 
+    // Build verb tense usage if verb
+    const verbTenses = isVerb ? this.generateVerbUsage(word) : undefined;
+
+    // Synonyms with distinction notes
+    const synonymsList = rawSynonyms.slice(0, 5).map((syn, idx) => ({
+      word: syn,
+      distinction: idx === 0
+        ? `Closest synonym to ${word} in everyday usage.`
+        : `Shares a similar meaning with ${word}, but emphasizes ${syn} characteristics.`
+    }));
+
+    const whenToUseList = this.generateWhenToUse(word, primaryPos, rawSynonyms);
+    const commonPhrasesList = this.generateCommonPhrases(word, primaryPos);
+    const memoryTipText = this.generateMemoryTip(word, rawSynonyms, primaryDefText);
+
+    // Build practice question
     const practiceQ: PracticeQuestion = {
       id: `${word}-q1`,
       wordId: word,
       type: 'multiple-choice',
       question: `What is the primary meaning of "${word}"?`,
       options: [
-        definitionsList[0]?.simple || primaryDef,
-        'Something completely unrelated or fake.',
-        'A formal type of ancient greeting.'
+        primarySimpleText,
+        `Something completely opposite to ${rawSynonyms[0] || 'the target concept'}.`,
+        'A formal term used exclusively in ancient architecture.'
       ],
       correctAnswerIndex: 0,
-      explanation: `"${word}" means: ${primaryDef}`
+      explanation: `"${word}" means: ${primaryDefText}`
     };
 
     return {
@@ -274,9 +291,9 @@ export const dictionaryService = {
       partOfSpeech: partsOfSpeech.length > 0 ? partsOfSpeech : ['adjective'],
       definitions: definitionsList.length > 0 ? definitionsList : [
         {
-          dictionary: `Definition for ${word}`,
-          simple: `Understanding the word ${word}`,
-          thinkOfItAs: `Using ${word}`
+          dictionary: primaryDefText,
+          simple: primarySimpleText,
+          thinkOfItAs: this.generateRichThinkOfItAs(word, primaryDefText, primaryPos, rawSynonyms, 0)
         }
       ],
       pronunciation: {
@@ -294,29 +311,27 @@ export const dictionaryService = {
       usage: {
         isVerb,
         explanation: isVerb
-          ? `"${word}" is a verb. It changes forms depending on whether the action happens in the present, past, or future.`
-          : `"${word}" is a ${partsOfSpeech.join('/')}. It does not change forms for tenses; the tense comes from the main verb in your sentence.`,
-        present: isVerb ? [`I ${word} regularly.`] : undefined,
-        past: isVerb ? [`I ${word}ed yesterday.`] : undefined,
-        future: isVerb ? [`I will ${word} tomorrow.`] : undefined
+          ? `"${word}" is an action verb. Notice how its form changes when moving from present to past and future tenses.`
+          : `"${word}" is a ${partsOfSpeech.join('/')}. It keeps the same form regardless of tense; the surrounding verb sets the sentence timing.`,
+        present: verbTenses?.present,
+        past: verbTenses?.past,
+        future: verbTenses?.future
       },
       examples: examplesList.length > 0 ? examplesList : [
         {
           context: 'Everyday',
-          sentence: `The word "${word}" is frequently used in formal written English.`
+          sentence: `The concept of "${word}" is frequently discussed in clear English communication.`
+        },
+        {
+          context: 'Academic',
+          sentence: `In formal contexts, understanding "${word}" helps articulate complex ideas accurately.`
         }
       ],
-      whenToUse: [
-        `Expressing concepts related to ${word}`,
-        `Communicating clearly in spoken or written English`
-      ],
-      commonPhrases: [
-        `Use of ${word}`,
-        `Speaking ${word}`
-      ],
-      synonyms: synonymsList.slice(0, 5),
-      antonyms: antonymsList.slice(0, 5),
-      memoryTip: `${word.charAt(0).toUpperCase() + word.slice(1)} = Key concept of ${word}`,
+      whenToUse: whenToUseList,
+      commonPhrases: commonPhrasesList,
+      synonyms: synonymsList,
+      antonyms: rawAntonyms.slice(0, 5),
+      memoryTip: memoryTipText,
       practiceQuestions: [practiceQ]
     };
   },
@@ -324,7 +339,7 @@ export const dictionaryService = {
   transformDatamuseEntry(dm: DatamuseResult): WordEntry {
     const word = dm.word.toLowerCase();
     const partsOfSpeech: PartOfSpeech[] = [];
-    const definitionsList: { dictionary: string; simple: string; thinkOfItAs?: string }[] = [];
+    const rawDefs: { pos: string; def: string }[] = [];
 
     dm.defs?.forEach(defLine => {
       const parts = defLine.split('\t');
@@ -339,17 +354,19 @@ export const dictionaryService = {
         else if (rawPos === 'n') pos = 'noun';
 
         if (!partsOfSpeech.includes(pos)) partsOfSpeech.push(pos);
-
-        definitionsList.push({
-          dictionary: text.charAt(0).toUpperCase() + text.slice(1),
-          simple: this.generateSimpleEnglish(text),
-          thinkOfItAs: `${word.charAt(0).toUpperCase() + word.slice(1)} concept`
-        });
+        rawDefs.push({ pos, def: text.charAt(0).toUpperCase() + text.slice(1) });
       }
     });
 
+    const primaryPos = partsOfSpeech[0] || 'noun';
+    const definitionsList = rawDefs.slice(0, 3).map((d, index) => ({
+      dictionary: d.def,
+      simple: this.generateRichSimpleEnglish(word, d.def, d.pos, []),
+      thinkOfItAs: this.generateRichThinkOfItAs(word, d.def, d.pos, [], index)
+    }));
+
     const isVerb = partsOfSpeech.includes('verb');
-    const primaryDef = definitionsList[0]?.dictionary || `Definition of ${word}`;
+    const primaryDefText = definitionsList[0]?.dictionary || `Definition of ${word}`;
 
     return {
       id: word,
@@ -362,23 +379,23 @@ export const dictionaryService = {
       },
       usage: {
         isVerb,
-        explanation: `"${word}" is a ${partsOfSpeech.join('/')}.`
+        explanation: `"${word}" functions as a ${partsOfSpeech.join('/')} in English sentences.`
       },
       examples: [
-        { context: 'Everyday', sentence: `She used the word "${word}" accurately.` }
+        { context: 'Everyday', sentence: `She used the term "${word}" in her conversation.` }
       ],
-      whenToUse: [`Talking about concepts related to ${word}`],
-      commonPhrases: [`The term ${word}`],
-      memoryTip: `${word.charAt(0).toUpperCase() + word.slice(1)} = Key concept`,
+      whenToUse: this.generateWhenToUse(word, primaryPos, []),
+      commonPhrases: this.generateCommonPhrases(word, primaryPos),
+      memoryTip: this.generateMemoryTip(word, [], primaryDefText),
       practiceQuestions: [
         {
           id: `${word}-q1`,
           wordId: word,
           type: 'multiple-choice',
           question: `What does "${word}" mean?`,
-          options: [primaryDef, 'Something unrelated', 'An ancient instrument'],
+          options: [primaryDefText, 'An ancient string instrument', 'Something completely unrelated'],
           correctAnswerIndex: 0,
-          explanation: `"${word}" means: ${primaryDef}`
+          explanation: `"${word}" means: ${primaryDefText}`
         }
       ]
     };
@@ -386,15 +403,16 @@ export const dictionaryService = {
 
   generateFallbackEntry(word: string): WordEntry {
     const cleanWord = word.toLowerCase();
+    const primaryDef = `An English vocabulary term referring to ${cleanWord}.`;
     return {
       id: cleanWord,
       word: cleanWord,
       partOfSpeech: ['noun'],
       definitions: [
         {
-          dictionary: `Word reference for ${cleanWord}.`,
-          simple: `Understanding ${cleanWord} in normal communication.`,
-          thinkOfItAs: `${cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1)} concept`
+          dictionary: primaryDef,
+          simple: `In plain English, ${cleanWord} refers to a specific concept, object, or quality.`,
+          thinkOfItAs: `A mental image representing ${cleanWord} in real life.`
         }
       ],
       pronunciation: {
@@ -403,21 +421,21 @@ export const dictionaryService = {
       },
       usage: {
         isVerb: false,
-        explanation: `"${cleanWord}" is a noun or general English vocabulary word.`
+        explanation: `"${cleanWord}" is an English noun.`
       },
       examples: [
         { context: 'Everyday', sentence: `We discussed ${cleanWord} during the study session.` }
       ],
-      whenToUse: [`Using standard English vocabulary for ${cleanWord}`],
-      commonPhrases: [`Concept of ${cleanWord}`],
-      memoryTip: `${cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1)} = Vocabulary word`,
+      whenToUse: [`Using standard English vocabulary when discussing ${cleanWord}`],
+      commonPhrases: [`The nature of ${cleanWord}`, `Key aspect of ${cleanWord}`],
+      memoryTip: `Remember: ${cleanWord.toUpperCase()} starts with '${cleanWord.charAt(0).toUpperCase()}'.`,
       practiceQuestions: [
         {
           id: `${cleanWord}-q1`,
           wordId: cleanWord,
           type: 'multiple-choice',
           question: `Which option describes "${cleanWord}"?`,
-          options: [`Reference for ${cleanWord}`, 'An unrelated mathematical term', 'A musical notation'],
+          options: [primaryDef, 'An unrelated mathematical term', 'A musical notation'],
           correctAnswerIndex: 0,
           explanation: `"${cleanWord}" is an English vocabulary term.`
         }
@@ -425,16 +443,151 @@ export const dictionaryService = {
     };
   },
 
-  generateSimpleEnglish(def: string): string {
+  // --- SMART RICH GENERATORS FOR TAILORED LEARNING ---
+
+  generateRichSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
     if (!def) return '';
-    let simple = def.replace(/^(Relating to|Characterized by|The quality of|The act of)\s+/i, '');
-    simple = simple.charAt(0).toUpperCase() + simple.slice(1);
-    return simple;
+
+    // Clean dictionary prefixes
+    let cleanDef = def
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of)\s+/i, '')
+      .replace(/;\s*also\s*:.*$/i, '');
+    cleanDef = cleanDef.charAt(0).toLowerCase() + cleanDef.slice(1);
+
+    if (synonyms.length >= 2) {
+      return `In simple terms, ${word} describes something that is ${synonyms[0]} or ${synonyms[1]}. It means ${cleanDef}.`;
+    } else if (synonyms.length === 1) {
+      return `In plain English, ${word} means being ${synonyms[0]}—${cleanDef}.`;
+    }
+
+    if (pos === 'adjective') {
+      return `In simple terms, ${word} is used to describe things or people that are ${cleanDef}.`;
+    } else if (pos === 'verb') {
+      return `In plain English, to ${word} means to ${cleanDef}.`;
+    } else if (pos === 'adverb') {
+      return `In simple terms, doing something ${word} means doing it in a way that is ${cleanDef}.`;
+    }
+
+    return `In plain English, ${word} refers to ${cleanDef}.`;
   },
 
-  generateThinkOfItAs(word: string, def: string): string {
-    if (def.length < 50) return def;
-    return `${word.charAt(0).toUpperCase() + word.slice(1)} in practice`;
+  generateRichThinkOfItAs(word: string, def: string, pos: string, synonyms: string[], index: number): string {
+    const keySynonym = synonyms[index] || synonyms[0];
+
+    if (keySynonym) {
+      return `${word.charAt(0).toUpperCase() + word.slice(1)} in action: Think of something that is strictly ${keySynonym}, like a moment or feeling that captures this quality.`;
+    }
+
+    const clean = def.replace(/^(Relating to|Characterized by|The quality of|The act of)\s+/i, '').toLowerCase();
+
+    if (pos === 'adjective') {
+      return `Think of a situation where something feels distinctly ${clean}.`;
+    } else if (pos === 'verb') {
+      return `Think of taking a clear, active step to ${clean}.`;
+    } else if (pos === 'noun') {
+      return `Picture a real-world example of ${clean}.`;
+    }
+
+    return `Think of ${word} as a core concept representing ${clean}.`;
+  },
+
+  generateWhenToUse(word: string, pos: string, synonyms: string[]): string[] {
+    const syn1 = synonyms[0] ? ` (${synonyms[0]})` : '';
+
+    if (pos === 'adjective') {
+      return [
+        `Use when describing qualities, traits, or states that feel ${synonyms[0] || 'distinct'} in your sentence.`,
+        `Use in writing or speeches when you want to add precision instead of using general terms like "good" or "bad".`
+      ];
+    } else if (pos === 'verb') {
+      return [
+        `Use when describing an action where someone takes steps to${syn1}.`,
+        `Use in professional, academic, or formal discussions to convey specific actions clearly.`
+      ];
+    } else if (pos === 'noun') {
+      return [
+        `Use when referring to the specific idea, condition, or entity of ${word}${syn1}.`,
+        `Use as the main topic or subject in sentences discussing ${word.toLowerCase()}.`
+      ];
+    }
+
+    return [
+      `Use when expressing ideas related to ${word}${syn1}.`,
+      `Use to elevate your spoken or written English vocabulary.`
+    ];
+  },
+
+  generateCommonPhrases(word: string, pos: string): string[] {
+    const capitalWord = word.charAt(0).toUpperCase() + word.slice(1);
+
+    if (pos === 'adjective') {
+      return [
+        `Highly ${word}`,
+        `${capitalWord} nature`,
+        `${capitalWord} effect`,
+        `Remain ${word}`
+      ];
+    } else if (pos === 'verb') {
+      return [
+        `Attempt to ${word}`,
+        `Ability to ${word}`,
+        `Strive to ${word}`,
+        `Successfully ${word}`
+      ];
+    } else if (pos === 'noun') {
+      return [
+        `The core of ${word}`,
+        `A sense of ${word}`,
+        `Underlying ${word}`,
+        `Degree of ${word}`
+      ];
+    }
+
+    return [
+      `Concept of ${word}`,
+      `${capitalWord} context`,
+      `Understanding ${word}`
+    ];
+  },
+
+  generateMemoryTip(word: string, synonyms: string[], def: string): string {
+    const firstLetter = word.charAt(0).toUpperCase();
+    const synMatch = synonyms.find(s => s.charAt(0).toUpperCase() === firstLetter);
+
+    if (synMatch) {
+      return `Mnemonic: ${word.toUpperCase()} starts with '${firstLetter}', just like ${synMatch.toUpperCase()} (${def.slice(0, 35)}...).`;
+    }
+
+    if (synonyms.length > 0) {
+      return `Anchor: Think of ${word.toUpperCase()} = ${synonyms.slice(0, 2).join(' / ').toUpperCase()}.`;
+    }
+
+    return `Anchor: ${word.toUpperCase()} starts with '${firstLetter}'. Connect it to ${def.slice(0, 40)}.`;
+  },
+
+  generateVerbUsage(word: string): { present: string[]; past: string[]; future: string[] } {
+    let pastForm = `${word}ed`;
+    if (word.endsWith('e')) pastForm = `${word}d`;
+    else if (word.endsWith('y') && !/[aeiou]y$/.test(word)) pastForm = `${word.slice(0, -1)}ied`;
+
+    let thirdPresent = `${word}s`;
+    if (word.endsWith('s') || word.endsWith('sh') || word.endsWith('ch') || word.endsWith('x')) thirdPresent = `${word}es`;
+    else if (word.endsWith('y') && !/[aeiou]y$/.test(word)) thirdPresent = `${word.slice(0, -1)}ies`;
+
+    return {
+      present: [
+        `She ${thirdPresent} whenever the opportunity arises.`,
+        `They ${word} regularly as part of their routine.`
+      ],
+      past: [
+        `We ${pastForm} after reviewing the initial results.`,
+        `The team ${pastForm} without hesitation.`
+      ],
+      future: [
+        `I will ${word} as soon as everything is prepared.`,
+        `They plan to ${word} in the upcoming phase.`
+      ]
+    };
   },
 
   generatePhoneticSpelling(word: string): string {
