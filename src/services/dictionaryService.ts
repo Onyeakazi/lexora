@@ -35,14 +35,13 @@ interface DatamuseResult {
   defs?: string[];
 }
 
-// Plain English mapping for common formal dictionary terms
 const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
   'infrequently': 'not very often, or almost never',
   'rarely': 'almost never',
   'frequently': 'very often or regularly',
   'evanescent': 'quick to vanish',
   'transitory': 'lasting for only a brief period',
-  'omnipresent': 'found everywhere you go',
+  'omnipresent': 'seen or found everywhere',
   'resilient': 'able to bounce back quickly',
   'reluctant': 'unwilling or hesitant',
   'versatile': 'flexible and good at many things',
@@ -50,7 +49,15 @@ const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
   'articulate': 'clear and easy to understand',
   'hypothetical': 'imagined rather than real',
   'supposition': 'an educated guess',
-  'conjecture': 'an opinion formed without full proof'
+  'conjecture': 'an opinion formed without full proof',
+  'meticulous': 'extremely careful with small details',
+  'diligent': 'hardworking and persistent',
+  'eloquent': 'persuasive and moving in speech',
+  'pragmatic': 'focused on practical results',
+  'benevolent': 'kind and generous toward others',
+  'audacious': 'bold and daring',
+  'lethargic': 'feeling sluggish and lacking energy',
+  'scrutiny': 'close and critical inspection'
 };
 
 export const dictionaryService = {
@@ -185,7 +192,6 @@ export const dictionaryService = {
     return [...SAMPLE_WORDS, ...cachedList];
   },
 
-  // Transforms Free Dictionary API response into a rich, natural WordEntry
   transformApiEntry(raw: ApiWordEntry): WordEntry {
     const word = raw.word.toLowerCase();
     const partsOfSpeech: PartOfSpeech[] = [];
@@ -234,7 +240,6 @@ export const dictionaryService = {
 
     const primaryPos = partsOfSpeech[0] || 'adjective';
 
-    // Generate genuinely simple English & vivid analogies for each definition
     const definitionsList = rawDefs.slice(0, 3).map((d, index) => {
       const simple = this.generateHumanSimpleEnglish(word, d.def, d.pos, rawSynonyms);
       const thinkOfItAs = this.generateVividMentalImage(word, d.def, d.pos, rawSynonyms, index);
@@ -245,7 +250,6 @@ export const dictionaryService = {
       };
     });
 
-    // Parse Audio & IPA
     let britishIpa = raw.phonetic;
     let americanIpa = raw.phonetic;
     let britishAudio = '';
@@ -278,8 +282,8 @@ export const dictionaryService = {
     const synonymsList = rawSynonyms.slice(0, 5).map((syn, idx) => ({
       word: syn,
       distinction: idx === 0
-        ? `Closest everyday word to ${word}.`
-        : `Shares a similar concept with ${word}, but emphasizes ${syn} qualities.`
+        ? `Closest everyday synonym to ${word}.`
+        : `Shares a similar concept with ${word}, but emphasizes ${syn} characteristics.`
     }));
 
     const whenToUseList = this.generateWhenToUse(word, primaryPos, rawSynonyms);
@@ -294,7 +298,7 @@ export const dictionaryService = {
       options: [
         primarySimpleText,
         `Something completely opposite to ${rawSynonyms[0] || 'the target concept'}.`,
-        'A formal greeting used exclusively in historical writing.'
+        'A formal term used exclusively in ancient architecture.'
       ],
       correctAnswerIndex: 0,
       explanation: `"${word}" means: ${primaryDefText}`
@@ -458,14 +462,14 @@ export const dictionaryService = {
     };
   },
 
-  // --- GENUINE HUMAN SIMPLE ENGLISH & VIVID MENTAL IMAGES ---
+  // --- DYNAMIC & CONCEPTUAL SIMPLE ENGLISH GENERATOR ---
 
   generateHumanSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
     if (!def) return '';
 
     const cleanWord = word.toLowerCase();
 
-    // Specific word overrides for crystal-clear 5th-grade English
+    // Specific high-frequency word mappings
     if (cleanWord === 'seldom') {
       return 'Seldom means almost never, or not very often. If you seldom do something, you do it only once in a long while.';
     } else if (cleanWord === 'ephemeral') {
@@ -476,26 +480,31 @@ export const dictionaryService = {
       return 'Ubiquitous describes something that seems to be everywhere at the same time, so you see it wherever you look.';
     } else if (cleanWord === 'hypothetical') {
       return 'Hypothetical describes an imagined situation or guess used to test an idea, not something that has actually happened yet.';
+    } else if (cleanWord === 'meticulous') {
+      return 'Meticulous describes someone who pays extreme attention to tiny details to ensure everything is perfect and error-free.';
+    } else if (cleanWord === 'diligent') {
+      return 'Diligent describes a worker or student who shows persistent, careful effort in completing their tasks.';
+    } else if (cleanWord === 'eloquent') {
+      return 'Eloquent describes speech or writing that is expressive, fluent, and powerful enough to move an audience.';
+    } else if (cleanWord === 'pragmatic') {
+      return 'Pragmatic describes a mindset focused on practical solutions that actually work, rather than theoretical or ideal rules.';
     }
 
-    // Clean up formal dictionary jargon
     let cleanDef = def
       .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is)\s+/i, '')
       .replace(/;\s*also\s*:.*$/i, '')
       .replace(/[\.\s]+$/, '');
 
-    // Translate formal terms using plain English dictionary map
     Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
       const regex = new RegExp(`\\b${key}\\b`, 'gi');
       cleanDef = cleanDef.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
     });
 
     cleanDef = cleanDef.charAt(0).toLowerCase() + cleanDef.slice(1);
-
     const capitalizeWord = word.charAt(0).toUpperCase() + word.slice(1);
 
     if (pos === 'adverb') {
-      return `${capitalizeWord} means ${cleanDef}. If something happens ${word}, it occurs only in that specific manner.`;
+      return `${capitalizeWord} means doing something in a way that is ${cleanDef}.`;
     } else if (pos === 'adjective') {
       if (synonyms.length > 0) {
         return `${capitalizeWord} describes something that is ${synonyms[0]}—meaning ${cleanDef}.`;
@@ -510,10 +519,12 @@ export const dictionaryService = {
     return `${capitalizeWord} refers to ${cleanDef}.`;
   },
 
+  // DYNAMIC CATEGORICAL MENTAL IMAGE ENGINE
   generateVividMentalImage(word: string, def: string, pos: string, synonyms: string[], index: number): string {
     const cleanWord = word.toLowerCase();
+    const lowerDef = def.toLowerCase();
 
-    // Specific vivid real-world analogies
+    // Specific word overrides
     if (cleanWord === 'seldom') {
       return 'Think of how often it snows in the desert — it almost never happens.';
     } else if (cleanWord === 'ephemeral') {
@@ -524,11 +535,49 @@ export const dictionaryService = {
       return 'Think of smartphones today — almost everyone carries one wherever you go.';
     } else if (cleanWord === 'hypothetical') {
       return 'Think of asking "What would you do if you won a million dollars?" — you are exploring an imagined scenario, not real cash yet.';
+    } else if (cleanWord === 'meticulous') {
+      return 'Think of a watchmaker carefully placing microscopic gears using tweezers, inspecting every single tooth.';
+    } else if (cleanWord === 'diligent') {
+      return 'Think of an ant steadily carrying food back to the hill all afternoon without giving up.';
+    } else if (cleanWord === 'eloquent') {
+      return 'Think of a speaker commanding a quiet auditorium where everyone pauses to listen because every word lands perfectly.';
+    } else if (cleanWord === 'pragmatic') {
+      return 'Think of choosing comfortable walking shoes for a long trek instead of stylish ones that hurt — prioritizing real results over appearance.';
+    }
+
+    // 1. Time / Frequency / Duration
+    if (lowerDef.includes('time') || lowerDef.includes('short') || lowerDef.includes('long') || lowerDef.includes('brief') || lowerDef.includes('often') || lowerDef.includes('rare')) {
+      return `Think of a fleeting moment in time — something that happens in a flash and passes before you know it.`;
+    }
+
+    // 2. Care / Precision / Detail
+    if (lowerDef.includes('detail') || lowerDef.includes('careful') || lowerDef.includes('precise') || lowerDef.includes('thorough') || lowerDef.includes('attention')) {
+      return `Think of double-checking your work with a magnifying glass to make sure not a single mistake slips through.`;
+    }
+
+    // 3. Speech / Communication / Sound
+    if (lowerDef.includes('speech') || lowerDef.includes('talk') || lowerDef.includes('speak') || lowerDef.includes('word') || lowerDef.includes('express') || lowerDef.includes('voice')) {
+      return `Think of expressing a thought so clearly that anyone listening understands your exact meaning instantly.`;
+    }
+
+    // 4. Strength / Resistance / Flexibility
+    if (lowerDef.includes('strong') || lowerDef.includes('power') || lowerDef.includes('tough') || lowerDef.includes('recover') || lowerDef.includes('difficult')) {
+      return `Think of a deep-rooted tree during a stormy gust — bending gracefully with the wind without breaking.`;
+    }
+
+    // 5. Mind / Thought / Ideas
+    if (lowerDef.includes('mind') || lowerDef.includes('idea') || lowerDef.includes('thought') || lowerDef.includes('reason') || lowerDef.includes('logic') || lowerDef.includes('believe')) {
+      return `Think of solving a puzzle in your mind by connecting pieces until the full picture makes complete sense.`;
+    }
+
+    // 6. Generosity / Emotion / Heart
+    if (lowerDef.includes('kind') || lowerDef.includes('give') || lowerDef.includes('generous') || lowerDef.includes('feeling') || lowerDef.includes('love') || lowerDef.includes('help')) {
+      return `Think of offering a warm umbrella to someone standing in the rain without asking for anything in return.`;
     }
 
     const keySynonym = synonyms[index] || synonyms[0];
     if (keySynonym) {
-      return `Think of something that is clearly ${keySynonym} — like a situation that perfectly illustrates this quality in real life.`;
+      return `Picture a real-life situation that is clearly ${keySynonym} — capturing this exact quality when you see it.`;
     }
 
     let cleanDef = def
@@ -537,14 +586,14 @@ export const dictionaryService = {
       .toLowerCase();
 
     if (pos === 'adverb') {
-      return `Think of a rare or specific moment when an action occurs ${cleanDef}.`;
+      return `Think of a specific moment when an action happens ${cleanDef}.`;
     } else if (pos === 'adjective') {
-      return `Think of a situation or object that is distinctly ${cleanDef}.`;
+      return `Picture a person, event, or object that stands out as distinctly ${cleanDef}.`;
     } else if (pos === 'verb') {
-      return `Think of taking an active step to ${cleanDef}.`;
+      return `Imagine taking a deliberate step to ${cleanDef} in your daily life.`;
     }
 
-    return `Think of a clear real-world scenario representing ${cleanDef}.`;
+    return `Picture a concrete real-life scenario representing ${cleanDef}.`;
   },
 
   generateWhenToUse(word: string, pos: string, synonyms: string[]): string[] {
@@ -567,8 +616,8 @@ export const dictionaryService = {
       ];
     } else if (pos === 'adverb') {
       return [
-        `Use to modify verbs or adjectives when describing how rarely or frequently an event occurs.`,
-        `Use at the start or middle of sentences to emphasize timing or frequency.`
+        `Use to modify verbs or adjectives when describing how or how often an event occurs.`,
+        `Use at the start or middle of sentences to emphasize timing or manner.`
       ];
     }
 
@@ -604,10 +653,10 @@ export const dictionaryService = {
       ];
     } else if (pos === 'adverb') {
       return [
-        `Seldom seen`,
-        `Seldom heard`,
-        `Very seldom`,
-        `Seldom if ever`
+        `${capitalWord} observed`,
+        `Quite ${word}`,
+        `Used ${word}`,
+        `${capitalWord} if ever`
       ];
     }
 
