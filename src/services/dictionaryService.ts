@@ -1,5 +1,6 @@
 import { WordEntry, PartOfSpeech, PracticeQuestion } from '../models/word';
 import { SAMPLE_WORDS } from '../data/words';
+import { OFFLINE_DICTIONARY_DATA } from '../data/offlineDictionary';
 import { storageService } from './storageService';
 
 const API_CACHE_KEY = 'lexora_api_words_cache';
@@ -102,7 +103,12 @@ export const dictionaryService = {
     const sampleMatch = SAMPLE_WORDS.find(w => w.word.toLowerCase() === cleanTerm || w.id.toLowerCase() === cleanTerm);
     if (sampleMatch) return sampleMatch;
 
-    // 2. Local IndexedDB / LocalStorage cache
+    // 2. Preloaded Offline Dictionary Dataset
+    if (OFFLINE_DICTIONARY_DATA[cleanTerm]) {
+      return OFFLINE_DICTIONARY_DATA[cleanTerm];
+    }
+
+    // 3. Local IndexedDB / LocalStorage cache
     const cache = storageService.get<Record<string, WordEntry>>(API_CACHE_KEY, {});
     return cache[cleanTerm] || null;
   },
@@ -111,7 +117,7 @@ export const dictionaryService = {
     if (!term || !term.trim()) return null;
     const cleanTerm = term.trim().toLowerCase();
 
-    // 1. Local sync match
+    // 1. Local sync match (0ms response)
     const local = this.getWordLocal(cleanTerm);
     if (local) return local;
 
@@ -145,7 +151,7 @@ export const dictionaryService = {
       console.warn('Datamuse API fallback error', e);
     }
 
-    // 4. Fallback generator
+    // 4. Fallback generator (Instant Offline Generator)
     const fallback = this.generateFallbackEntry(cleanTerm);
     this.cacheWord(cleanTerm, fallback);
     return fallback;
@@ -165,8 +171,16 @@ export const dictionaryService = {
     if (!query || !query.trim()) return [];
     const cleanQuery = query.trim().toLowerCase();
 
+    const offlineList = Object.values(OFFLINE_DICTIONARY_DATA);
     const cache = storageService.get<Record<string, WordEntry>>(API_CACHE_KEY, {});
-    const allLocal = [...SAMPLE_WORDS, ...Object.values(cache)];
+    const cachedList = Object.values(cache);
+
+    const wordMap = new Map<string, WordEntry>();
+    SAMPLE_WORDS.forEach(w => wordMap.set(w.word.toLowerCase(), w));
+    offlineList.forEach(w => { if (!wordMap.has(w.word.toLowerCase())) wordMap.set(w.word.toLowerCase(), w); });
+    cachedList.forEach(w => { if (!wordMap.has(w.word.toLowerCase())) wordMap.set(w.word.toLowerCase(), w); });
+
+    const allLocal = Array.from(wordMap.values());
 
     const exact = allLocal.filter(w => w.word.toLowerCase() === cleanQuery);
     const startsWith = allLocal.filter(w => w.word.toLowerCase().startsWith(cleanQuery) && w.word.toLowerCase() !== cleanQuery);
@@ -323,6 +337,7 @@ export const dictionaryService = {
     const authenticExamples = this.generateAuthenticExamples(word, primaryPos, examplesList);
 
     const whenToUseList = this.generateWhenToUse(word, primaryPos, rawSynonyms);
+    const whenNotToUseList = this.generateWhenNotToUse(word, primaryPos, rawSynonyms);
     const commonPhrasesList = this.generateCommonPhrases(word, primaryPos);
     const memoryTipText = this.generateMemoryTip(word, rawSynonyms, primaryDefText);
 
@@ -374,6 +389,7 @@ export const dictionaryService = {
       },
       examples: authenticExamples,
       whenToUse: whenToUseList,
+      whenNotToUse: whenNotToUseList,
       commonPhrases: commonPhrasesList,
       synonyms: synonymsList,
       antonyms: rawAntonyms.slice(0, 5),
@@ -733,6 +749,30 @@ export const dictionaryService = {
     return [
       `Use when expressing ideas related to ${word}${syn1}.`,
       `Use to elevate your spoken or written English vocabulary.`
+    ];
+  },
+
+  generateWhenNotToUse(word: string, pos: string, synonyms: string[]): string[] {
+    const syn0 = synonyms[0] ? ` (${synonyms[0]})` : '';
+    if (pos === 'adjective') {
+      return [
+        `Avoid using "${word}" when describing physical objects that completely lack this quality.`,
+        `Do not confuse "${word}" with ${synonyms[0] || 'opposite terms'} when precise distinctions matter.`
+      ];
+    } else if (pos === 'verb') {
+      return [
+        `Do not use "${word}" for passive situations where no active effort or change occurs.`,
+        `Avoid using "${word}" as a noun without converting it to its proper noun form.`
+      ];
+    } else if (pos === 'noun') {
+      return [
+        `Do not use "${word}" when describing a personal action rather than a state, object, or concept${syn0}.`,
+        `Avoid substituting "${word}" for unrelated general vocabulary.`
+      ];
+    }
+    return [
+      `Avoid using "${word}" in informal slang when a simpler everyday word is expected${syn0}.`,
+      `Do not use "${word}" out of context in unrelated technical fields.`
     ];
   },
 

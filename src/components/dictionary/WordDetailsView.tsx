@@ -284,24 +284,48 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
       {/* 38. WHEN TO USE IT */}
       {wordEntry.whenToUse && wordEntry.whenToUse.length > 0 && (
         <section style={{ marginBottom: '1.75rem' }}>
-          <h2 className="section-title">When To Use It</h2>
-          <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-primary)', lineHeight: '1.6' }}>
-            {wordEntry.whenToUse.map((item, i) => (
-              <li key={i} style={{ marginBottom: '0.375rem' }}>{item}</li>
-            ))}
-          </ul>
+          <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <CheckCircle2 size={18} color="#22c55e" />
+            <span>When To Use It</span>
+          </h2>
+          <div
+            style={{
+              padding: '1rem 1.125rem',
+              backgroundColor: 'rgba(34, 197, 94, 0.08)',
+              border: '1px solid rgba(34, 197, 94, 0.25)',
+              borderRadius: 'var(--radius-md)'
+            }}
+          >
+            <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-primary)', lineHeight: '1.65' }}>
+              {wordEntry.whenToUse.map((item, i) => (
+                <li key={i} style={{ marginBottom: '0.4rem', fontWeight: 500 }}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </section>
       )}
 
       {/* 39. WHEN NOT TO USE IT */}
       {wordEntry.whenNotToUse && wordEntry.whenNotToUse.length > 0 && (
         <section style={{ marginBottom: '1.75rem' }}>
-          <h2 className="section-title">When Not To Use It</h2>
-          <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
-            {wordEntry.whenNotToUse.map((item, i) => (
-              <li key={i} style={{ marginBottom: '0.375rem' }}>{item}</li>
-            ))}
-          </ul>
+          <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <XCircle size={18} color="#ef4444" />
+            <span>When NOT To Use It</span>
+          </h2>
+          <div
+            style={{
+              padding: '1rem 1.125rem',
+              backgroundColor: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              borderRadius: 'var(--radius-md)'
+            }}
+          >
+            <ul style={{ margin: 0, paddingLeft: '1.25rem', color: 'var(--text-secondary)', lineHeight: '1.65' }}>
+              {wordEntry.whenNotToUse.map((item, i) => (
+                <li key={i} style={{ marginBottom: '0.4rem' }}>{item}</li>
+              ))}
+            </ul>
+          </div>
         </section>
       )}
 

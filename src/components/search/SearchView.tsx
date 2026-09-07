@@ -22,7 +22,19 @@ export const SearchView: React.FC<SearchViewProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     setRecentSearches(storageService.getRecentSearches());
@@ -42,11 +54,20 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
     let isMounted = true;
 
+    // 1. Instant local suggestions & immediate results (0ms)
     const suggs = dictionaryService.getSuggestions(trimmed);
     setSuggestions(suggs);
 
+    const localResults = dictionaryService.searchWordLocal(trimmed);
+    if (localResults.length > 0 && !isMultiTerm) {
+      setSearchResults(localResults);
+    }
+
+    // 2. Fast background sync for external or multi-word terms
     const performSearch = async () => {
-      setIsLoading(true);
+      if (localResults.length === 0 || isMultiTerm) {
+        setIsLoading(true);
+      }
       if (isMultiTerm) {
         setSearchResults([]);
         const multi = await dictionaryService.searchMultipleWords(trimmed);
@@ -64,7 +85,7 @@ export const SearchView: React.FC<SearchViewProps> = ({
       }
     };
 
-    const timer = setTimeout(performSearch, 250);
+    const timer = setTimeout(performSearch, localResults.length > 0 ? 400 : 100);
     return () => {
       isMounted = false;
       clearTimeout(timer);
@@ -111,6 +132,27 @@ export const SearchView: React.FC<SearchViewProps> = ({
 
   return (
     <div className="content-container">
+      {/* OFFLINE STATUS BADGE */}
+      {isOffline && (
+        <div
+          style={{
+            marginBottom: '1rem',
+            padding: '0.625rem 0.875rem',
+            backgroundColor: 'var(--bg-accent-subtle)',
+            border: '1px solid var(--badge-border)',
+            borderRadius: 'var(--radius-md)',
+            color: 'var(--color-accent)',
+            fontSize: '0.85rem',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}
+        >
+          <span>📶 Offline Mode — Searching preloaded dictionary dataset & offline cache</span>
+        </div>
+      )}
+
       {/* SEARCH BAR WITH VOICE SEARCH */}
       <form onSubmit={handleSearchSubmit} style={{ marginBottom: '1.25rem' }}>
         <div
