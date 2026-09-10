@@ -51,14 +51,24 @@ export const aiService = {
 
     const primaryDef = entry.definitions[0]?.dictionary || `The word ${entry.word}`;
     const pos = entry.partOfSpeech.join(', ') || 'word';
+    const synList = entry.synonyms && entry.synonyms.length > 0 
+      ? entry.synonyms.map(s => s.word).join(', ') 
+      : '';
 
     try {
-      const prompt = `You are the master AI lexicographer for Lexora.
+      const prompt = `You are the master AI lexicographer for Lexora dictionary.
 Word: "${entry.word}"
 Part of Speech: "${pos}"
 Original Definition: "${primaryDef}"
+${synList ? `Target Synonyms to Explain: ${synList}` : ''}
 
-Task: Generate a rich, 5th-grade plain English breakdown and real-world usage structure for this word.
+Task: Generate a rich 5th-grade plain English breakdown for "${entry.word}" and its synonyms.
+CRITICAL INSTRUCTIONS FOR SYNONYMS:
+- Provide 3 to 5 relevant synonyms.
+- For EACH synonym:
+  - "simpleDefinition": Write a clear 1-sentence 5th-grade plain English explanation of what that synonym means. DO NOT use generic phrases like "Refers to X in plain English".
+  - "distinction": Write a specific 1-sentence explanation of how that synonym differs in tone, intensity, or context from "${entry.word}". DO NOT use generic formulas like "emphasizes X characteristics".
+
 Return ONLY valid JSON in this exact structure without markdown backticks:
 {
   "simple": "A clear, 5th-grade ELI5 explanation without formal dictionary jargon",
@@ -69,9 +79,9 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
   "memoryTip": "A memorable 1-sentence mnemonic anchor",
   "synonyms": [
     {
-      "word": "synonym word",
-      "simpleDefinition": "1-sentence plain English simple explanation of what this synonym means",
-      "distinction": "Subtle difference in usage compared to ${entry.word}"
+      "word": "synonym word name",
+      "simpleDefinition": "Specific plain English explanation of what this synonym means",
+      "distinction": "Specific difference in nuance, intensity, or tone compared to ${entry.word}"
     }
   ]
 }`;
@@ -85,7 +95,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 600
+              maxOutputTokens: 1000
             }
           })
         }

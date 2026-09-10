@@ -95,6 +95,110 @@ const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
   'predominant': 'main'
 };
 
+const SYNONYM_DETAILS_MAP: Record<string, { simpleDefinition: string; distinction: string }> = {
+  'offensive': {
+    simpleDefinition: 'Causing people to feel insulted, hurt, or deeply upset.',
+    distinction: 'Focuses on breaching social boundaries or causing emotional hurt.'
+  },
+  'unhealthy': {
+    simpleDefinition: 'Not good for physical, mental, or emotional well-being.',
+    distinction: 'A broader term describing anything harmful to overall wellness.'
+  },
+  'ghoulish': {
+    simpleDefinition: 'Showing a creepy or unnatural fascination with death and horror.',
+    distinction: 'More shocking and grotesque, with an eerie, disturbing focus.'
+  },
+  'pathological': {
+    simpleDefinition: 'Driven by an uncontrollable obsession or mental condition.',
+    distinction: 'Suggests a medical or compulsive disorder behind the behavior.'
+  },
+  'unwholesome': {
+    simpleDefinition: 'Harmful to moral health, character, or general wellness.',
+    distinction: 'Emphasizes corrupting or undesirable influences.'
+  },
+  'vague': {
+    simpleDefinition: 'Lacking clear detail, precise facts, or sharp definition.',
+    distinction: 'Focuses on missing detail rather than having multiple meanings.'
+  },
+  'unclear': {
+    simpleDefinition: 'Difficult to see, hear, or understand with certainty.',
+    distinction: 'A general term for anything confusing or hard to decipher.'
+  },
+  'equivocal': {
+    simpleDefinition: 'Intentionally using ambiguous words to hide the truth or avoid commitment.',
+    distinction: 'Implies a deliberate attempt to mislead or remain undecided.'
+  },
+  'tough': {
+    simpleDefinition: 'Strong, durable, and able to endure hardship without breaking.',
+    distinction: 'Emphasizes physical or mental strength rather than speed of recovery.'
+  },
+  'adaptable': {
+    simpleDefinition: 'Able to easily change habits or methods to fit new conditions.',
+    distinction: 'Focuses on adjusting smoothly to fresh environments.'
+  },
+  'flexible': {
+    simpleDefinition: 'Capable of bending or modifying plans without causing disruption.',
+    distinction: 'Emphasizes openness to change rather than endurance under pressure.'
+  },
+  'bargain': {
+    simpleDefinition: 'To discuss prices or conditions in order to reach a better deal.',
+    distinction: 'Focuses specifically on financial trade or price negotiations.'
+  },
+  'mediate': {
+    simpleDefinition: 'To intervene between conflicting parties to bring about agreement.',
+    distinction: 'Implies a neutral third person guiding two opposing sides.'
+  },
+  'settle': {
+    simpleDefinition: 'To reach a final agreement and resolve a disagreement completely.',
+    distinction: 'Focuses on bringing an issue to a closed conclusion.'
+  },
+  'unavoidable': {
+    simpleDefinition: 'Impossible to prevent, bypass, or stay away from.',
+    distinction: 'Directly stresses that no action can alter the outcome.'
+  },
+  'certain': {
+    simpleDefinition: 'Completely sure to happen without any doubt.',
+    distinction: 'Expresses high confidence without the dramatic weight of inevitable.'
+  },
+  'eloquence': {
+    simpleDefinition: 'Fluent, persuasive, and beautiful expression in speech or writing.',
+    distinction: 'Emphasizes artistic beauty and emotional impact of expression.'
+  },
+  'fluent': {
+    simpleDefinition: 'Able to express yourself smoothly, easily, and without pauses.',
+    distinction: 'Focuses on effortless flow rather than deep persuasion.'
+  },
+  'hesitant': {
+    simpleDefinition: 'Pausing or holding back before acting due to doubt or uncertainty.',
+    distinction: 'Focuses on the brief pause or delay caused by indecision.'
+  },
+  'unwilling': {
+    simpleDefinition: 'Refusing to give consent or participate in an action.',
+    distinction: 'Expresses direct refusal rather than temporary hesitation.'
+  },
+  'speculate': {
+    simpleDefinition: 'Forming opinions or theories about something without firm proof.',
+    distinction: 'Focuses on making educated guesses based on incomplete information.'
+  },
+  'postulate': {
+    simpleDefinition: 'Suggesting a core statement or principle as a starting foundation.',
+    distinction: 'Used in formal or academic contexts as a starting premise.'
+  }
+};
+
+function getFallbackSynonymDetails(synWord: string, mainWord: string): { simpleDefinition: string; distinction: string } {
+  const cleanSyn = synWord.toLowerCase();
+  const cleanMain = mainWord.toLowerCase();
+
+  const mapped = SYNONYM_DETAILS_MAP[cleanSyn];
+  if (mapped) return mapped;
+
+  return {
+    simpleDefinition: `Exhibiting or describing the qualities of ${cleanSyn}.`,
+    distinction: `Differs from "${cleanMain}" by bringing out a unique nuance of ${cleanSyn}.`
+  };
+}
+
 export const dictionaryService = {
   getWordLocal(term: string): WordEntry | null {
     if (!term) return null;
@@ -157,30 +261,33 @@ export const dictionaryService = {
           if (!merged.includes(s)) merged.push(s);
         });
 
-        entry.synonyms = merged.slice(0, 5).map((syn, idx) => ({
-          word: syn,
-          distinction: idx === 0
-            ? `Closest everyday synonym to ${entry.word}.`
-            : `Shares a similar concept with ${entry.word}, but emphasizes ${syn} characteristics.`
+        entry.synonyms = merged.slice(0, 5).map(syn => ({
+          word: syn
         }));
       }
     }
 
     if (entry.synonyms && entry.synonyms.length > 0) {
       entry.synonyms = entry.synonyms.map(synItem => {
-        if (!synItem.simpleDefinition) {
-          const localMatch = this.getWordLocal(synItem.word);
-          const simpleDef =
-            localMatch?.definitions?.[0]?.simple ||
-            localMatch?.definitions?.[0]?.dictionary ||
-            FORMAL_TO_SIMPLE_MAP[synItem.word.toLowerCase()] ||
-            `Refers to ${synItem.word} in plain English.`;
-          return {
-            ...synItem,
-            simpleDefinition: simpleDef
-          };
-        }
-        return synItem;
+        const cleanSyn = synItem.word.toLowerCase();
+        const fallback = getFallbackSynonymDetails(cleanSyn, entry.word);
+        const localMatch = this.getWordLocal(cleanSyn);
+
+        const simpleDef =
+          (synItem.simpleDefinition && !synItem.simpleDefinition.startsWith('Refers to'))
+            ? synItem.simpleDefinition
+            : (localMatch?.definitions?.[0]?.simple || localMatch?.definitions?.[0]?.dictionary || fallback.simpleDefinition);
+
+        const dist =
+          (synItem.distinction && !synItem.distinction.includes('emphasizes'))
+            ? synItem.distinction
+            : fallback.distinction;
+
+        return {
+          word: synItem.word,
+          simpleDefinition: simpleDef,
+          distinction: dist
+        };
       });
     }
 
@@ -418,19 +525,20 @@ export const dictionaryService = {
 
     const verbTenses = isVerb ? this.generateVerbUsage(word) : undefined;
 
-    const synonymsList = rawSynonyms.slice(0, 5).map((syn, idx) => {
-      const localMatch = this.getWordLocal(syn);
+    const synonymsList = rawSynonyms.slice(0, 5).map(syn => {
+      const cleanSyn = syn.toLowerCase();
+      const fallback = getFallbackSynonymDetails(cleanSyn, word);
+      const localMatch = this.getWordLocal(cleanSyn);
+
       const simpleDef =
         localMatch?.definitions?.[0]?.simple ||
         localMatch?.definitions?.[0]?.dictionary ||
-        FORMAL_TO_SIMPLE_MAP[syn.toLowerCase()] ||
-        `Refers to ${syn} in plain English.`;
+        fallback.simpleDefinition;
+
       return {
         word: syn,
         simpleDefinition: simpleDef,
-        distinction: idx === 0
-          ? `Closest everyday synonym to ${word}.`
-          : `Shares a similar concept with ${word}, but emphasizes ${syn} characteristics.`
+        distinction: fallback.distinction
       };
     });
 
