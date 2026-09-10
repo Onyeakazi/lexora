@@ -10,7 +10,7 @@ const STORAGE_KEYS = {
 const DEFAULT_SETTINGS: UserSettings = {
   preferredPronunciation: 'british',
   audioSpeed: 1,
-  theme: 'system',
+  theme: 'dark',
   autoPlayAudio: false
 };
 

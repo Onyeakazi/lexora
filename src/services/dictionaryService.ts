@@ -113,7 +113,7 @@ export const dictionaryService = {
     return cache[cleanTerm] || null;
   },
 
-  async fetchWithTimeout(url: string, timeoutMs: number = 600): Promise<Response> {
+  async fetchWithTimeout(url: string, timeoutMs: number = 4000): Promise<Response> {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -126,21 +126,63 @@ export const dictionaryService = {
     }
   },
 
+  async fetchDatamuseSynonyms(word: string): Promise<string[]> {
+    try {
+      const res = await this.fetchWithTimeout(`https://api.datamuse.com/words?rel_syn=${encodeURIComponent(word)}&max=8`, 2500);
+      if (res.ok) {
+        const list: { word: string }[] = await res.json();
+        if (list && list.length > 0) {
+          return list.map(item => item.word.toLowerCase());
+        }
+      }
+      const mlRes = await this.fetchWithTimeout(`https://api.datamuse.com/words?ml=${encodeURIComponent(word)}&max=6`, 2500);
+      if (mlRes.ok) {
+        const mlList: { word: string }[] = await mlRes.json();
+        return mlList.map(item => item.word.toLowerCase()).filter(w => w !== word.toLowerCase());
+      }
+    } catch (e) {
+      console.warn('Datamuse synonym fetch failed', e);
+    }
+    return [];
+  },
+
+  async enrichSynonymsIfNeeded(entry: WordEntry): Promise<WordEntry> {
+    if (!entry.synonyms || entry.synonyms.length < 2) {
+      const fetchedSyns = await this.fetchDatamuseSynonyms(entry.word);
+      if (fetchedSyns.length > 0) {
+        const currentSyns = entry.synonyms ? entry.synonyms.map(s => s.word.toLowerCase()) : [];
+        const merged = [...currentSyns];
+        fetchedSyns.forEach(s => {
+          if (!merged.includes(s)) merged.push(s);
+        });
+
+        entry.synonyms = merged.slice(0, 5).map((syn, idx) => ({
+          word: syn,
+          distinction: idx === 0
+            ? `Closest everyday synonym to ${entry.word}.`
+            : `Shares a similar concept with ${entry.word}, but emphasizes ${syn} characteristics.`
+        }));
+      }
+    }
+    return entry;
+  },
+
   async getWord(term: string): Promise<WordEntry | null> {
     if (!term || !term.trim()) return null;
     const cleanTerm = term.trim().toLowerCase();
 
     // 1. Local sync match (0ms response)
     const local = this.getWordLocal(cleanTerm);
-    if (local) return local;
+    if (local) return await this.enrichSynonymsIfNeeded(local);
 
-    // 2. Try Free Dictionary API with 600ms network timeout cutoff
+    // 2. Try Free Dictionary API with generous 4000ms timeout
     try {
-      const response = await this.fetchWithTimeout(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`, 600);
+      const response = await this.fetchWithTimeout(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`, 4000);
       if (response.ok) {
         const data: ApiWordEntry[] = await response.json();
         if (data && data.length > 0) {
-          const transformed = this.transformApiEntry(data[0]);
+          let transformed = this.transformApiEntry(data[0]);
+          transformed = await this.enrichSynonymsIfNeeded(transformed);
           this.cacheWord(cleanTerm, transformed);
           return transformed;
         }
@@ -149,13 +191,14 @@ export const dictionaryService = {
       console.warn('Free Dictionary API lookup error/timeout', e);
     }
 
-    // 3. Backup: Datamuse API with 500ms network timeout cutoff
+    // 3. Backup: Datamuse API with generous 3500ms timeout
     try {
-      const dmResponse = await this.fetchWithTimeout(`https://api.datamuse.com/words?sp=${encodeURIComponent(cleanTerm)}&md=d&max=1`, 500);
+      const dmResponse = await this.fetchWithTimeout(`https://api.datamuse.com/words?sp=${encodeURIComponent(cleanTerm)}&md=d&max=1`, 3500);
       if (dmResponse.ok) {
         const dmData: DatamuseResult[] = await dmResponse.json();
         if (dmData && dmData.length > 0 && dmData[0].defs && dmData[0].defs.length > 0) {
-          const transformed = this.transformDatamuseEntry(dmData[0]);
+          let transformed = this.transformDatamuseEntry(dmData[0]);
+          transformed = await this.enrichSynonymsIfNeeded(transformed);
           this.cacheWord(cleanTerm, transformed);
           return transformed;
         }
@@ -164,8 +207,9 @@ export const dictionaryService = {
       console.warn('Datamuse API fallback error/timeout', e);
     }
 
-    // 4. Fallback generator (Instant Local Entry Generator)
-    const fallback = this.generateFallbackEntry(cleanTerm);
+    // 4. Fallback generator
+    let fallback = this.generateFallbackEntry(cleanTerm);
+    fallback = await this.enrichSynonymsIfNeeded(fallback);
     this.cacheWord(cleanTerm, fallback);
     return fallback;
   },
@@ -584,9 +628,9 @@ export const dictionaryService = {
       ];
     } else if (pos === 'noun') {
       return [
-        { context: 'Everyday', sentence: `The new policy came under close ${clean} from community members.` },
-        { context: 'Work', sentence: `We faced a clear ${clean} when deciding between the two proposals.` },
-        { context: 'Academic', sentence: `Researchers presented a new ${clean} supported by recent field data.` }
+        { context: 'Everyday', sentence: `Understanding the concept of ${clean} helps clarify daily discussions.` },
+        { context: 'Work', sentence: `The team evaluated key factors regarding ${clean} during the review.` },
+        { context: 'Academic', sentence: `Researchers presented a new study on ${clean} supported by field data.` }
       ];
     }
 
@@ -624,6 +668,7 @@ export const dictionaryService = {
     }
 
     let cleanDef = def
+      .replace(/^\s*\([^)]*\)\s*/g, '')
       .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is)\s+/i, '')
       .replace(/;\s*also\s*:.*$/i, '')
       .replace(/[\.\s]+$/, '');
@@ -715,6 +760,7 @@ export const dictionaryService = {
     }
 
     let cleanDef = def
+      .replace(/^\s*\([^)]*\)\s*/g, '')
       .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is)\s+/i, '')
       .replace(/[\.\s]+$/, '')
       .toLowerCase();
