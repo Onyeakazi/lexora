@@ -1,6 +1,3 @@
-import { storageService } from './storageService';
-import { UserSettings } from '../models/user';
-
 interface GeminiResponsePart {
   text?: string;
 }
@@ -20,28 +17,9 @@ export interface LaymanRegenerationResult {
   thinkOfItAs: string;
 }
 
-// Fallback pool of high-entropy creative layman analogies when API key is unavailable or offline
-const CREATIVE_ANALOGY_TEMPLATES: Record<string, LaymanRegenerationResult[]> = {
-  default: [
-    {
-      simple: 'Imagine explaining this to a 10-year-old: it describes a specific action, object, or feeling that stands out clearly whenever it happens.',
-      thinkOfItAs: 'Spotlight turning on in a dark room — suddenly making everything clear.'
-    },
-    {
-      simple: 'In plain everyday talk, this means getting right to the point without any complicated rules or fancy jargon.',
-      thinkOfItAs: 'Taking the shortcut path through the park instead of the long paved road.'
-    },
-    {
-      simple: 'Think of this as a core building block in conversation: it gives a clear label to something you see or do every single day.',
-      thinkOfItAs: 'A bright label stuck on a jar so you know exactly what is inside.'
-    }
-  ]
-};
-
 export const aiService = {
   getApiKey(): string {
-    const settings = storageService.get<UserSettings>('lexora_user_settings', {} as UserSettings);
-    return settings.geminiApiKey?.trim() || import.meta.env.VITE_GEMINI_API_KEY || '';
+    return (import.meta.env.VITE_GEMINI_API_KEY || '').trim();
   },
 
   async generateLaymanExplanation(
@@ -61,7 +39,7 @@ Original Definition: "${definition}"
 Task: Generate a BRAND NEW, FRESH, and UNIQUE layman explanation in 5th-grade plain English, along with a vivid real-life visual analogy ("Think of it as...").
 Rules:
 - DO NOT reuse formal dictionary jargon.
-- Make it totally distinct and easy for a beginner to grasp.
+- Make it totally distinct, engaging, and easy for a beginner to grasp.
 - Return ONLY valid JSON in this exact structure without markdown backticks:
 {"simple": "...", "thinkOfItAs": "..."}`;
 
@@ -73,7 +51,7 @@ Rules:
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
-                temperature: 0.95, // High creativity for diverse spins
+                temperature: 0.95,
                 maxOutputTokens: 300
               }
             })
@@ -95,43 +73,45 @@ Rules:
           }
         }
       } catch (err) {
-        console.warn('Gemini API spin generation failed or offline, falling back to local generator', err);
+        console.warn('Gemini API spin generation failed, falling back to multi-angle generator', err);
       }
     }
 
-    // Creative dynamic local generator (ensures the spin button ALWAYS works)
+    // Creative dynamic multi-angle fallback generator
     return this.generateDynamicLocalVariant(word, definition, partOfSpeech);
   },
 
   generateDynamicLocalVariant(word: string, def: string, pos: string): LaymanRegenerationResult {
-    const cleanWord = word.toLowerCase();
-    const cleanDef = def.replace(/^(Relating to|Characterized by|The quality of|The act of)\s+/i, '').replace(/\.$/, '');
+    const cleanDef = def
+      .replace(/^\s*\([^)]*\)\s*/g, '')
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of)\s+/i, '')
+      .replace(/\.$/, '')
+      .trim();
 
-    const defaults = CREATIVE_ANALOGY_TEMPLATES['default'] || [];
-    const templateMatch = defaults[Math.floor(Math.random() * defaults.length)];
-
-    const visualMetaphors = [
-      `Think of ${cleanWord} (${pos}) like a high-definition zoom lens — highlighting "${cleanDef}" in vivid detail.`,
-      `Picture a real-life scene where someone is actively experiencing ${cleanWord} — prioritizing real results over talk.`,
-      `Imagine how a cartoon character would demonstrate ${cleanWord} in 3 seconds flat.`,
-      `Think of a light switch turning on — instantly connecting ${cleanWord} to "${cleanDef}".`,
-      templateMatch ? templateMatch.thinkOfItAs : `Picture a clear real-life scene representing ${cleanWord}.`
+    const angles: LaymanRegenerationResult[] = [
+      {
+        simple: `Think of "${word}" as describing something that is completely focused on ${cleanDef.toLowerCase()}. In simple terms, when you see this happen, it means ${cleanDef.toLowerCase()} without extra complication.`,
+        thinkOfItAs: `Picture a high-definition zoom lens pointing straight at ${cleanDef.toLowerCase()} — isolating this exact trait from everything else.`
+      },
+      {
+        simple: `If you were explaining "${word}" to a 5th grader: it is a ${pos} used when something or someone exhibits ${cleanDef.toLowerCase()}.`,
+        thinkOfItAs: `Think of a bright yellow highlighter marking "${cleanDef.toLowerCase()}" in a book so it jumps off the page.`
+      },
+      {
+        simple: `In plain everyday English, using "${word}" is the quickest way to describe ${cleanDef.toLowerCase()} without needing long formal explanations.`,
+        thinkOfItAs: `Picture a light switch clicking on in a dark room — instantly connecting "${word}" with ${cleanDef.toLowerCase()}.`
+      },
+      {
+        simple: `At its heart, "${word}" captures the exact feeling or situation of ${cleanDef.toLowerCase()} in a single clear word.`,
+        thinkOfItAs: `Imagine how a cartoon scene would demonstrate ${cleanDef.toLowerCase()} in 3 seconds flat with zero spoken words.`
+      },
+      {
+        simple: `When people use "${word}", they are pointing out an instance of ${cleanDef.toLowerCase()} in action.`,
+        thinkOfItAs: `Think of taking the shortcut path through the park — direct, clear, and focused on ${cleanDef.toLowerCase()}.`
+      }
     ];
 
-    const simplePhrasings = [
-      `Put simply, ${word} functions as a ${pos} referring to ${cleanDef.toLowerCase()} without any added fuss.`,
-      `In plain 5th-grade English, when you encounter ${word}, think directly of ${cleanDef.toLowerCase()}.`,
-      `At its core, ${word} describes the exact moment or quality of being ${cleanDef.toLowerCase()}.`,
-      `${word.charAt(0).toUpperCase() + word.slice(1)} means breaking down ${cleanDef.toLowerCase()} into terms anyone can relate to.`,
-      templateMatch ? templateMatch.simple : `${word} refers to ${cleanDef}.`
-    ];
-
-    const randomMetaphor = visualMetaphors[Math.floor(Math.random() * visualMetaphors.length)];
-    const randomSimple = simplePhrasings[Math.floor(Math.random() * simplePhrasings.length)];
-
-    return {
-      simple: randomSimple,
-      thinkOfItAs: randomMetaphor
-    };
+    const randomIndex = Math.floor(Math.random() * angles.length);
+    return angles[randomIndex];
   }
 };

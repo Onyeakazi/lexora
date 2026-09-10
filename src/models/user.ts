@@ -9,7 +9,6 @@ export type UserSettings = {
   audioSpeed: AudioSpeed;
   theme: ThemePreference;
   autoPlayAudio: boolean;
-  geminiApiKey?: string;
 };
 
 export type SavedWordItem = {
