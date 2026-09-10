@@ -67,10 +67,10 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'A hypothetical question'
     ],
     synonyms: [
-      { word: 'Possible', distinction: 'Could happen in real life.' },
-      { word: 'Theoretical', distinction: 'Based on principles or theories.' },
-      { word: 'Imaginary', distinction: 'Exists only in the mind.' },
-      { word: 'Supposed', distinction: 'Assumed to be true for the sake of argument.' }
+      { word: 'Possible', simpleDefinition: 'Something that could actually happen in real life.', distinction: 'Could happen in real life.' },
+      { word: 'Theoretical', simpleDefinition: 'Based on ideas or rules rather than practical experience.', distinction: 'Based on principles or theories.' },
+      { word: 'Imaginary', simpleDefinition: 'Existing only in your mind or imagination, not real.', distinction: 'Exists only in the mind.' },
+      { word: 'Supposed', simpleDefinition: 'Assumed to be true for the sake of an argument.', distinction: 'Assumed to be true for the sake of argument.' }
     ],
     antonyms: ['Actual', 'Real', 'Factual', 'Proven', 'Certain'],
     memoryTip: 'Hypothetical = "What if?"',
@@ -158,9 +158,9 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'Resilient spirit'
     ],
     synonyms: [
-      { word: 'Tough', distinction: 'Strong and durable, though less focused on recovery.' },
-      { word: 'Adaptable', distinction: 'Able to adjust to new situations.' },
-      { word: 'Flexible', distinction: 'Can bend without breaking.' }
+      { word: 'Tough', simpleDefinition: 'Strong and durable, able to handle rough treatment.', distinction: 'Strong and durable, though less focused on recovery.' },
+      { word: 'Adaptable', simpleDefinition: 'Able to easily adjust to new situations or conditions.', distinction: 'Able to adjust to new situations.' },
+      { word: 'Flexible', simpleDefinition: 'Able to bend or change without breaking.', distinction: 'Can bend without breaking.' }
     ],
     antonyms: ['Fragile', 'Vulnerable', 'Weak', 'Delicate'],
     memoryTip: 'Resilient = Bounce back!',
@@ -235,9 +235,9 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'Avoid ambiguous language'
     ],
     synonyms: [
-      { word: 'Vague', distinction: 'Lacks detail, but might not have multiple specific interpretations.' },
-      { word: 'Unclear', distinction: 'General lack of clarity.' },
-      { word: 'Equivocal', distinction: 'Intentionally confusing or misleading.' }
+      { word: 'Vague', simpleDefinition: 'Not clearly explained or expressed, lacking precise details.', distinction: 'Lacks detail, but might not have multiple specific interpretations.' },
+      { word: 'Unclear', simpleDefinition: 'Hard to understand or see clearly.', distinction: 'General lack of clarity.' },
+      { word: 'Equivocal', simpleDefinition: 'Using uncertain language that could mean more than one thing.', distinction: 'Intentionally confusing or misleading.' }
     ],
     antonyms: ['Clear', 'Explicit', 'Unambiguous', 'Definite'],
     memoryTip: 'Ambiguous = Am I option A or B?',
@@ -324,9 +324,9 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'Open to negotiation'
     ],
     synonyms: [
-      { word: 'Bargain', distinction: 'Focuses heavily on price or trade.' },
-      { word: 'Mediate', distinction: 'Helping two OTHER parties reach an agreement.' },
-      { word: 'Settle', distinction: 'Reaching a final conclusion.' }
+      { word: 'Bargain', simpleDefinition: 'To discuss prices or terms to get a better deal.', distinction: 'Focuses heavily on price or trade.' },
+      { word: 'Mediate', simpleDefinition: 'To help two opposing sides talk and agree.', distinction: 'Helping two OTHER parties reach an agreement.' },
+      { word: 'Settle', simpleDefinition: 'To come to a final agreement or decision.', distinction: 'Reaching a final conclusion.' }
     ],
     antonyms: ['Dictate', 'Impose', 'Refuse'],
     memoryTip: 'Negotiate = Talk to agree!',
@@ -382,8 +382,8 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'Describing natural consequences'
     ],
     synonyms: [
-      { word: 'Unavoidable', distinction: 'Directly means impossible to avoid.' },
-      { word: 'Certain', distinction: 'Definite, but less dramatic than inevitable.' }
+      { word: 'Unavoidable', simpleDefinition: 'Impossible to stop or prevent from happening.', distinction: 'Directly means impossible to avoid.' },
+      { word: 'Certain', simpleDefinition: 'Completely sure to happen without any doubt.', distinction: 'Definite, but less dramatic than inevitable.' }
     ],
     antonyms: ['Avoidable', 'Uncertain', 'Preventable'],
     memoryTip: 'Inevitable = It WILL happen.'
@@ -423,8 +423,8 @@ export const SAMPLE_WORDS: WordEntry[] = [
       }
     ],
     synonyms: [
-      { word: 'Eloquence', distinction: 'Persuasive and graceful speech.' },
-      { word: 'Fluent', distinction: 'Smooth speech, especially in languages.' }
+      { word: 'Eloquence', simpleDefinition: 'Fluent, persuasive, and graceful speaking or writing.', distinction: 'Persuasive and graceful speech.' },
+      { word: 'Fluent', simpleDefinition: 'Able to express yourself smoothly and easily.', distinction: 'Smooth speech, especially in languages.' }
     ],
     antonyms: ['Inarticulate', 'Hesitant', 'Mumbled'],
     memoryTip: 'Articulate = Clear speech.'
@@ -456,7 +456,10 @@ export const SAMPLE_WORDS: WordEntry[] = [
         sentence: 'He was reluctant to lend his car to a new driver.'
       }
     ],
-    synonyms: [{ word: 'Hesitant' }, { word: 'Unwilling' }],
+    synonyms: [
+      { word: 'Hesitant', simpleDefinition: 'Pausing before acting because you feel unsure or reluctant.', distinction: 'Pausing or slowing down before acting.' },
+      { word: 'Unwilling', simpleDefinition: 'Not wanting to do something or refusing to agree.', distinction: 'Refusing to give consent or agree.' }
+    ],
     antonyms: ['Eager', 'Willing', 'Enthusiastic'],
     memoryTip: 'Reluctant = Unwilling to start.'
   },
@@ -487,7 +490,11 @@ export const SAMPLE_WORDS: WordEntry[] = [
         sentence: 'She is a versatile developer skilled in both frontend and backend systems.'
       }
     ],
-    synonyms: [{ word: 'Adaptable' }, { word: 'Flexible' }, { word: 'All-around' }],
+    synonyms: [
+      { word: 'Adaptable', simpleDefinition: 'Able to adjust quickly to different situations.', distinction: 'Adjusting quickly to changes.' },
+      { word: 'Flexible', simpleDefinition: 'Able to change easily to fit different needs.', distinction: 'Changing easily to fit circumstances.' },
+      { word: 'All-around', simpleDefinition: 'Good at many different skills or useful for many things.', distinction: 'Having wide-ranging skills.' }
+    ],
     antonyms: ['Limited', 'Inflexible', 'Specialized'],
     memoryTip: 'Versatile = Multi-use.'
   },
@@ -518,7 +525,11 @@ export const SAMPLE_WORDS: WordEntry[] = [
         sentence: 'The scientist formed a hypothesis before conducting the lab experiment.'
       }
     ],
-    synonyms: [{ word: 'Theory' }, { word: 'Supposition' }, { word: 'Proposition' }],
+    synonyms: [
+      { word: 'Theory', simpleDefinition: 'A tested idea used to explain facts or events.', distinction: 'A system of ideas intended to explain something.' },
+      { word: 'Supposition', simpleDefinition: 'An uncertain belief or educated guess.', distinction: 'An idea assumed to be true.' },
+      { word: 'Proposition', simpleDefinition: 'A suggested plan or idea put forward for consideration.', distinction: 'A statement or plan offered for discussion.' }
+    ],
     antonyms: ['Fact', 'Proof', 'Certainty'],
     memoryTip: 'Hypothesis = Educated guess.'
   },
@@ -556,7 +567,10 @@ export const SAMPLE_WORDS: WordEntry[] = [
         sentence: 'Economists hypothesize that interest rates will stabilize soon.'
       }
     ],
-    synonyms: [{ word: 'Speculate' }, { word: 'Postulate' }],
+    synonyms: [
+      { word: 'Speculate', simpleDefinition: 'To form a theory or guess without firm evidence.', distinction: 'Forming opinions without firm proof.' },
+      { word: 'Postulate', simpleDefinition: 'To suggest an idea as a starting point for reasoning.', distinction: 'Suggesting a premise for debate.' }
+    ],
     antonyms: ['Prove', 'Confirm'],
     memoryTip: 'Hypothesize = Make a guess.'
   }

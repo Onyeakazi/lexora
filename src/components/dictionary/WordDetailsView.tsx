@@ -441,13 +441,13 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
       {wordEntry.synonyms && wordEntry.synonyms.length > 0 && (
         <section style={{ marginBottom: '1.75rem' }}>
           <h2 className="section-title">Similar Words</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
             {wordEntry.synonyms.map((syn, i) => (
               <div
                 key={i}
                 onClick={() => onNavigateToWord(syn.word)}
                 style={{
-                  padding: '0.75rem 1rem',
+                  padding: '0.875rem 1rem',
                   backgroundColor: 'var(--bg-surface)',
                   border: '1px solid var(--border-color)',
                   borderRadius: 'var(--radius-md)',
@@ -455,18 +455,27 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
+                  gap: '0.75rem',
                   transition: 'background-color var(--transition-fast)'
                 }}
               >
-                <div>
-                  <strong style={{ color: 'var(--color-accent)', fontSize: '1rem' }}>{syn.word}</strong>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ color: 'var(--color-accent)', fontSize: '1.05rem', display: 'block' }}>
+                    {syn.word}
+                  </strong>
+                  {syn.simpleDefinition && (
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.925rem', color: 'var(--text-primary)', lineHeight: '1.45' }}>
+                      {syn.simpleDefinition}
+                    </p>
+                  )}
                   {syn.distinction && (
-                    <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.825rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+                      <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Note: </span>
                       {syn.distinction}
                     </p>
                   )}
                 </div>
-                <ArrowRight size={16} color="var(--text-muted)" />
+                <ArrowRight size={18} color="var(--text-muted)" style={{ flexShrink: 0 }} />
               </div>
             ))}
           </div>

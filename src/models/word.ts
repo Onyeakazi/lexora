@@ -42,6 +42,7 @@ export type ExampleItem = {
 export type SynonymItem = {
   word: string;
   distinction?: string;
+  simpleDefinition?: string;
 };
 
 export type PracticeQuestion = {

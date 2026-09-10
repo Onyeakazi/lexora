@@ -165,6 +165,25 @@ export const dictionaryService = {
         }));
       }
     }
+
+    if (entry.synonyms && entry.synonyms.length > 0) {
+      entry.synonyms = entry.synonyms.map(synItem => {
+        if (!synItem.simpleDefinition) {
+          const localMatch = this.getWordLocal(synItem.word);
+          const simpleDef =
+            localMatch?.definitions?.[0]?.simple ||
+            localMatch?.definitions?.[0]?.dictionary ||
+            FORMAL_TO_SIMPLE_MAP[synItem.word.toLowerCase()] ||
+            `Refers to ${synItem.word} in plain English.`;
+          return {
+            ...synItem,
+            simpleDefinition: simpleDef
+          };
+        }
+        return synItem;
+      });
+    }
+
     return entry;
   },
 
@@ -399,12 +418,21 @@ export const dictionaryService = {
 
     const verbTenses = isVerb ? this.generateVerbUsage(word) : undefined;
 
-    const synonymsList = rawSynonyms.slice(0, 5).map((syn, idx) => ({
-      word: syn,
-      distinction: idx === 0
-        ? `Closest everyday synonym to ${word}.`
-        : `Shares a similar concept with ${word}, but emphasizes ${syn} characteristics.`
-    }));
+    const synonymsList = rawSynonyms.slice(0, 5).map((syn, idx) => {
+      const localMatch = this.getWordLocal(syn);
+      const simpleDef =
+        localMatch?.definitions?.[0]?.simple ||
+        localMatch?.definitions?.[0]?.dictionary ||
+        FORMAL_TO_SIMPLE_MAP[syn.toLowerCase()] ||
+        `Refers to ${syn} in plain English.`;
+      return {
+        word: syn,
+        simpleDefinition: simpleDef,
+        distinction: idx === 0
+          ? `Closest everyday synonym to ${word}.`
+          : `Shares a similar concept with ${word}, but emphasizes ${syn} characteristics.`
+      };
+    });
 
     // Generate authentic real-life sentence examples (combines API examples with authentic natural sentences)
     const authenticExamples = this.generateAuthenticExamples(word, primaryPos, examplesList);

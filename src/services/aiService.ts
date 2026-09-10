@@ -19,6 +19,12 @@ export interface LaymanRegenerationResult {
   thinkOfItAs: string;
 }
 
+export interface AISynonymItem {
+  word: string;
+  simpleDefinition: string;
+  distinction?: string;
+}
+
 export interface AIErichedWordDetails {
   simple: string;
   thinkOfItAs: string;
@@ -26,6 +32,7 @@ export interface AIErichedWordDetails {
   whenToUse: string[];
   whenNotToUse: string[];
   memoryTip?: string;
+  synonyms?: AISynonymItem[];
 }
 
 export const aiService = {
@@ -59,7 +66,14 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
   "commonUseExample": "An authentic situational sentence connecting a real scenario to the word in quote marks (e.g. 'Someone obsessed with reading disaster news has a \"morbid fascination\".')",
   "whenToUse": ["Clear bullet point on when to use this word", "Second clear situation to use"],
   "whenNotToUse": ["Clear caution bullet point on when NOT to use", "Common confusion to avoid"],
-  "memoryTip": "A memorable 1-sentence mnemonic anchor"
+  "memoryTip": "A memorable 1-sentence mnemonic anchor",
+  "synonyms": [
+    {
+      "word": "synonym word",
+      "simpleDefinition": "1-sentence plain English simple explanation of what this synonym means",
+      "distinction": "Subtle difference in usage compared to ${entry.word}"
+    }
+  ]
 }`;
 
       const response = await fetch(
@@ -71,7 +85,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 500
+              maxOutputTokens: 600
             }
           })
         }
@@ -95,6 +109,13 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
           if (parsed.whenToUse && parsed.whenToUse.length > 0) entry.whenToUse = parsed.whenToUse;
           if (parsed.whenNotToUse && parsed.whenNotToUse.length > 0) entry.whenNotToUse = parsed.whenNotToUse;
           if (parsed.memoryTip) entry.memoryTip = parsed.memoryTip;
+          if (parsed.synonyms && Array.isArray(parsed.synonyms) && parsed.synonyms.length > 0) {
+            entry.synonyms = parsed.synonyms.map(syn => ({
+              word: syn.word,
+              simpleDefinition: syn.simpleDefinition,
+              distinction: syn.distinction
+            }));
+          }
         }
       }
     } catch (err) {
