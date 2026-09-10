@@ -71,6 +71,7 @@ export type WordEntry = {
   commonPhrases?: string[];
   synonyms?: SynonymItem[];
   antonyms?: string[];
+  commonUseExample?: string;
   memoryTip?: string;
   practiceQuestions?: PracticeQuestion[];
 };

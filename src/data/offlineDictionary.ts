@@ -39,7 +39,8 @@ export const OFFLINE_DICTIONARY_DATA: Record<string, WordEntry> = {
       { word: 'Uncertainty', distinction: 'Refers to lack of knowledge rather than double meanings.' },
       { word: 'Vagueness', distinction: 'Refers to lack of detail rather than having multiple meanings.' }
     ],
-    antonyms: ['Clarity', 'Certainty', 'Precision', 'Directness']
+    antonyms: ['Clarity', 'Certainty', 'Precision', 'Directness'],
+    commonUseExample: 'A contract that leaves payment terms open to multiple interpretations creates legal "ambiguity".'
   },
   'articulate': {
     id: 'articulate',

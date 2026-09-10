@@ -311,6 +311,31 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
         </section>
       )}
 
+      {/* COMMON SITUATIONAL USE EXAMPLE */}
+      {wordEntry.commonUseExample && (
+        <section style={{ marginBottom: '1.75rem' }}>
+          <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Lightbulb size={18} color="var(--color-accent)" />
+            <span>Common Situational Use</span>
+          </h2>
+          <div
+            style={{
+              padding: '1rem 1.125rem',
+              backgroundColor: 'var(--bg-accent-subtle)',
+              border: '1.5px dashed var(--badge-border)',
+              borderRadius: 'var(--radius-md)'
+            }}
+          >
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--badge-text)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.375rem' }}>
+              REAL-WORLD SCENARIO
+            </span>
+            <p style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '1.05rem', lineHeight: '1.55', color: 'var(--text-primary)' }}>
+              "{wordEntry.commonUseExample}"
+            </p>
+          </div>
+        </section>
+      )}
+
       {/* 37. REAL-LIFE EXAMPLES */}
       {wordEntry.examples && wordEntry.examples.length > 0 && (
         <section style={{ marginBottom: '1.75rem' }}>

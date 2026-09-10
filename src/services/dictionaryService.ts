@@ -406,6 +406,7 @@ export const dictionaryService = {
       commonPhrases: commonPhrasesList,
       synonyms: synonymsList,
       antonyms: rawAntonyms.slice(0, 5),
+      commonUseExample: this.generateCommonUseExample(word, primaryPos, primaryDefText, rawSynonyms),
       memoryTip: memoryTipText,
       practiceQuestions: [practiceQ]
     };
@@ -787,6 +788,34 @@ export const dictionaryService = {
       `Avoid using "${word}" in informal slang when a simpler everyday word is expected${syn0}.`,
       `Do not use "${word}" out of context in unrelated technical fields.`
     ];
+  },
+
+  generateCommonUseExample(word: string, pos: string, def: string, synonyms: string[]): string {
+    const cleanWord = word.toLowerCase();
+    const cleanDef = def.replace(/^(Relating to|Characterized by|The quality of|The act of)\s+/i, '').replace(/\.$/, '').toLowerCase();
+    const synHint = synonyms.length > 0 && synonyms[0] !== cleanWord ? ` (similar to ${synonyms[0]})` : '';
+
+    if (cleanWord === 'hypothetical') {
+      return 'Asking someone what they would do if they won the lottery is posing a "hypothetical question".';
+    } else if (cleanWord === 'resilient') {
+      return 'A startup that bounces back quickly after losing funding is described as being "resilient".';
+    } else if (cleanWord === 'morbid') {
+      return 'Someone who is overly obsessed with reading disaster news has a "morbid fascination".';
+    } else if (cleanWord === 'candid') {
+      return 'A manager who speaks the complete truth without hiding uncomfortable facts is giving a "candid review".';
+    } else if (cleanWord === 'meticulous') {
+      return 'A surgeon who double-checks every tool before an operation shows "meticulous preparation".';
+    }
+
+    if (pos === 'adjective') {
+      return `Someone or something displaying ${cleanDef}${synHint} in daily life is described using "${word}".`;
+    } else if (pos === 'verb') {
+      return `Taking direct action to ${cleanDef}${synHint} in your work is how you "${word}".`;
+    } else if (pos === 'noun') {
+      return `Experiencing a situation involving ${cleanDef}${synHint} is a classic example of "${word}".`;
+    }
+
+    return `Using "${word}" in conversation helps describe a scenario involving ${cleanDef}${synHint}.`;
   },
 
   generateCommonPhrases(word: string, pos: string): string[] {
