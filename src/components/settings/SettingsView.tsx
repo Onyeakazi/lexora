@@ -1,6 +1,6 @@
 import React from 'react';
 import { UserSettings, PreferredPronunciation, AudioSpeed, ThemePreference } from '../../models/user';
-import { Moon, Sun, Monitor, Trash2, Check } from 'lucide-react';
+import { Moon, Sun, Monitor, Trash2, Check, Sparkles } from 'lucide-react';
 import { storageService } from '../../services/storageService';
 
 interface SettingsViewProps {
@@ -157,6 +157,55 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             );
           })}
+        </div>
+      </section>
+
+      {/* AI GENERATION SETTINGS */}
+      <section style={{ marginBottom: '1.75rem' }}>
+        <h2 className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <Sparkles size={18} color="var(--color-accent)" />
+          <span>Google Gemini AI Configuration</span>
+        </h2>
+        <div style={{ padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-surface)' }}>
+          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+            Gemini API Key (Optional for Custom AI Spins)
+          </label>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <input
+              type="password"
+              placeholder="AIzaSy..."
+              value={settings.geminiApiKey || ''}
+              onChange={e => onUpdateSettings({ geminiApiKey: e.target.value })}
+              style={{
+                flex: 1,
+                padding: '0.625rem 0.875rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-color-strong)',
+                backgroundColor: 'var(--bg-subtle)',
+                color: 'var(--text-primary)',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.875rem'
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => onShowToast('Gemini API Key updated!')}
+              style={{
+                padding: '0.625rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                backgroundColor: 'var(--color-accent)',
+                color: '#ffffff',
+                fontWeight: 600,
+                border: 'none',
+                cursor: 'pointer'
+              }}
+            >
+              Save
+            </button>
+          </div>
+          <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.775rem', color: 'var(--text-muted)' }}>
+            Enter your Google Gemini API key to enable infinite dynamic AI spin variations for any English term.
+          </p>
         </div>
       </section>
 

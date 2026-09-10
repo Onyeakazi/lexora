@@ -113,6 +113,19 @@ export const dictionaryService = {
     return cache[cleanTerm] || null;
   },
 
+  async fetchWithTimeout(url: string, timeoutMs: number = 600): Promise<Response> {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(id);
+      return response;
+    } catch (err) {
+      clearTimeout(id);
+      throw err;
+    }
+  },
+
   async getWord(term: string): Promise<WordEntry | null> {
     if (!term || !term.trim()) return null;
     const cleanTerm = term.trim().toLowerCase();
@@ -121,9 +134,9 @@ export const dictionaryService = {
     const local = this.getWordLocal(cleanTerm);
     if (local) return local;
 
-    // 2. Try Free Dictionary API
+    // 2. Try Free Dictionary API with 600ms network timeout cutoff
     try {
-      const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`);
+      const response = await this.fetchWithTimeout(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`, 600);
       if (response.ok) {
         const data: ApiWordEntry[] = await response.json();
         if (data && data.length > 0) {
@@ -133,12 +146,12 @@ export const dictionaryService = {
         }
       }
     } catch (e) {
-      console.warn('Free Dictionary API lookup error', e);
+      console.warn('Free Dictionary API lookup error/timeout', e);
     }
 
-    // 3. Backup: Datamuse API
+    // 3. Backup: Datamuse API with 500ms network timeout cutoff
     try {
-      const dmResponse = await fetch(`https://api.datamuse.com/words?sp=${encodeURIComponent(cleanTerm)}&md=d&max=1`);
+      const dmResponse = await this.fetchWithTimeout(`https://api.datamuse.com/words?sp=${encodeURIComponent(cleanTerm)}&md=d&max=1`, 500);
       if (dmResponse.ok) {
         const dmData: DatamuseResult[] = await dmResponse.json();
         if (dmData && dmData.length > 0 && dmData[0].defs && dmData[0].defs.length > 0) {
@@ -148,10 +161,10 @@ export const dictionaryService = {
         }
       }
     } catch (e) {
-      console.warn('Datamuse API fallback error', e);
+      console.warn('Datamuse API fallback error/timeout', e);
     }
 
-    // 4. Fallback generator (Instant Offline Generator)
+    // 4. Fallback generator (Instant Local Entry Generator)
     const fallback = this.generateFallbackEntry(cleanTerm);
     this.cacheWord(cleanTerm, fallback);
     return fallback;

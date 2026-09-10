@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WordEntry } from '../../models/word';
 import { UserSettings } from '../../models/user';
 import { PronunciationPlayer } from './PronunciationPlayer';
@@ -6,7 +6,8 @@ import { PronunciationPracticeCard } from './PronunciationPracticeCard';
 import { BookmarkButton } from '../common/BookmarkButton';
 import { ShareButton } from '../common/ShareButton';
 import { CopyButton } from '../common/CopyButton';
-import { CheckCircle2, XCircle, ArrowRight, Lightbulb, Layers } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, Lightbulb, Layers, Sparkles, RefreshCw } from 'lucide-react';
+import { aiService } from '../../services/aiService';
 
 interface WordDetailsViewProps {
   wordEntry: WordEntry;
@@ -29,6 +30,32 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
 }) => {
   const [selectedPracticeOption, setSelectedPracticeOption] = useState<number | null>(null);
   const [showPracticeExplanation, setShowPracticeExplanation] = useState(false);
+  const [customSimple, setCustomSimple] = useState<string | null>(null);
+  const [customThinkOfItAs, setCustomThinkOfItAs] = useState<string | null>(null);
+  const [isSpinning, setIsSpinning] = useState(false);
+
+  useEffect(() => {
+    setCustomSimple(null);
+    setCustomThinkOfItAs(null);
+  }, [wordEntry.id]);
+
+  const handleSpinLaymanMeaning = async () => {
+    setIsSpinning(true);
+    try {
+      const res = await aiService.generateLaymanExplanation(
+        wordEntry.word,
+        wordEntry.definitions[0]?.dictionary || '',
+        wordEntry.partOfSpeech[0] || 'adjective'
+      );
+      setCustomSimple(res.simple);
+      setCustomThinkOfItAs(res.thinkOfItAs);
+      onShowToast('Generated new AI layman explanation!');
+    } catch (e) {
+      onShowToast('Failed to generate new explanation');
+    } finally {
+      setIsSpinning(false);
+    }
+  };
 
   const mainDef = wordEntry.definitions[0];
   const preferredIsBritish = settings.preferredPronunciation === 'british';
@@ -162,25 +189,57 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
         </div>
       </section>
 
-      {/* 33. SIMPLE ENGLISH */}
+      {/* 33. SIMPLE ENGLISH WITH AI SPIN BUTTON */}
       <section style={{ marginBottom: '1.75rem' }}>
-        <h2 className="section-title">In Simple English</h2>
-        <p className="simple-explanation" style={{ marginBottom: '0.75rem' }}>{mainDef.simple}</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <h2 className="section-title" style={{ margin: 0 }}>In Simple English</h2>
+          <button
+            type="button"
+            onClick={handleSpinLaymanMeaning}
+            disabled={isSpinning}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.375rem',
+              padding: '0.4rem 0.75rem',
+              backgroundColor: 'var(--bg-accent-subtle)',
+              border: '1px solid var(--badge-border)',
+              borderRadius: 'var(--radius-md)',
+              color: 'var(--color-accent)',
+              fontSize: '0.825rem',
+              fontWeight: 600,
+              cursor: isSpinning ? 'wait' : 'pointer',
+              transition: 'all 200ms ease'
+            }}
+          >
+            {isSpinning ? (
+              <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <Sparkles size={14} color="var(--color-accent)" />
+            )}
+            <span>{isSpinning ? 'Spinning AI...' : 'Spin AI Explanation'}</span>
+          </button>
+        </div>
 
-        {mainDef.thinkOfItAs && (
+        <p className="simple-explanation" style={{ marginBottom: '0.75rem', transition: 'all 300ms ease' }}>
+          {customSimple || mainDef.simple}
+        </p>
+
+        {(customThinkOfItAs || mainDef.thinkOfItAs) && (
           <div
             style={{
               backgroundColor: 'var(--bg-accent-subtle)',
               padding: '0.875rem 1.125rem',
               borderRadius: 'var(--radius-md)',
-              border: '1px solid var(--badge-border)'
+              border: '1px solid var(--badge-border)',
+              transition: 'all 300ms ease'
             }}
           >
             <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--badge-text)', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
               THINK OF IT AS
             </span>
             <blockquote style={{ margin: 0, fontFamily: 'var(--font-sans)', fontSize: '1.15rem', fontStyle: 'italic', color: 'var(--badge-text)' }}>
-              "{mainDef.thinkOfItAs}"
+              "{customThinkOfItAs || mainDef.thinkOfItAs}"
             </blockquote>
           </div>
         )}
