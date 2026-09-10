@@ -66,8 +66,8 @@ Task: Generate a rich 5th-grade plain English breakdown for "${entry.word}" and 
 CRITICAL INSTRUCTIONS FOR SYNONYMS:
 - Provide 3 to 5 relevant synonyms.
 - For EACH synonym:
-  - "simpleDefinition": Write a clear 1-sentence 5th-grade plain English explanation of what that synonym means.
-  - "distinction": Write a specific 1-sentence explanation comparing this synonym directly to "${entry.word}" (e.g. 'Compared to ${entry.word}, "ghoulish" is more creepy and grotesque, with an eerie focus on death.').
+  - "simpleDefinition": Write a short 1-sentence 5th-grade ELI5 explanation of what that synonym means.
+  - "distinction": Write a VERY SHORT, SIMPLE 5-10 word note comparing it to "${entry.word}" (e.g. 'More scary and creepy than morbid', 'Focuses on hurting someone\'s feelings', or 'Applies to any bad habit').
 
 Return ONLY valid JSON in this exact structure without markdown backticks:
 {

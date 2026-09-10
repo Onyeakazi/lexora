@@ -67,10 +67,10 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'A hypothetical question'
     ],
     synonyms: [
-      { word: 'Possible', simpleDefinition: 'Something that could actually happen in real life.', distinction: 'Compared to hypothetical, "possible" means it could actually occur in reality.' },
-      { word: 'Theoretical', simpleDefinition: 'Based on ideas or rules rather than practical experience.', distinction: 'Compared to hypothetical, "theoretical" is grounded in established principles.' },
-      { word: 'Imaginary', simpleDefinition: 'Existing only in your mind or imagination, not real.', distinction: 'Compared to hypothetical, "imaginary" cannot happen in the real world.' },
-      { word: 'Supposed', simpleDefinition: 'Assumed to be true for the sake of an argument.', distinction: 'Compared to hypothetical, "supposed" assumes a fact for discussion.' }
+      { word: 'Possible', simpleDefinition: 'Something that could actually happen in real life.', distinction: 'Means it can really happen.' },
+      { word: 'Theoretical', simpleDefinition: 'Based on ideas or rules rather than real practice.', distinction: 'Based on rules or theories.' },
+      { word: 'Imaginary', simpleDefinition: 'Existing only in your mind, not real.', distinction: 'Means completely pretend.' },
+      { word: 'Supposed', simpleDefinition: 'Assumed to be true for an argument.', distinction: 'Assumed just for discussion.' }
     ],
     antonyms: ['Actual', 'Real', 'Factual', 'Proven', 'Certain'],
     memoryTip: 'Hypothetical = "What if?"',
@@ -158,9 +158,9 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'Resilient spirit'
     ],
     synonyms: [
-      { word: 'Tough', simpleDefinition: 'Strong and durable, able to handle rough treatment.', distinction: 'Compared to resilient, "tough" emphasizes raw strength rather than quick recovery.' },
-      { word: 'Adaptable', simpleDefinition: 'Able to easily adjust to new situations or conditions.', distinction: 'Compared to resilient, "adaptable" focuses on modifying habits to new environments.' },
-      { word: 'Flexible', simpleDefinition: 'Able to bend or change without breaking.', distinction: 'Compared to resilient, "flexible" means open to change without facing damage.' }
+      { word: 'Tough', simpleDefinition: 'Strong and able to handle rough treatment.', distinction: 'Focuses on raw strength.' },
+      { word: 'Adaptable', simpleDefinition: 'Able to easily adjust to new situations.', distinction: 'Focuses on fitting into new places.' },
+      { word: 'Flexible', simpleDefinition: 'Able to bend or change plans easily.', distinction: 'Focuses on being open to change.' }
     ],
     antonyms: ['Fragile', 'Vulnerable', 'Weak', 'Delicate'],
     memoryTip: 'Resilient = Bounce back!',

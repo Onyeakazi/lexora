@@ -97,92 +97,92 @@ const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
 
 const SYNONYM_DETAILS_MAP: Record<string, { simpleDefinition: string; distinction: string }> = {
   'offensive': {
-    simpleDefinition: 'Causing people to feel insulted, hurt, or deeply upset.',
-    distinction: 'Focuses on breaching social boundaries or causing emotional hurt.'
+    simpleDefinition: 'Causing someone to feel insulted or deeply hurt.',
+    distinction: 'Focuses on hurting people\'s feelings.'
   },
   'unhealthy': {
-    simpleDefinition: 'Not good for physical, mental, or emotional well-being.',
-    distinction: 'A broader term describing anything harmful to overall wellness.'
+    simpleDefinition: 'Not good for physical or mental health.',
+    distinction: 'Applies to any bad habit or illness.'
   },
   'ghoulish': {
-    simpleDefinition: 'Showing a creepy or unnatural fascination with death and horror.',
-    distinction: 'More shocking and grotesque, with an eerie, disturbing focus.'
+    simpleDefinition: 'Showing a creepy fascination with death and horror.',
+    distinction: 'Much more scary and creepy.'
   },
   'pathological': {
-    simpleDefinition: 'Driven by an uncontrollable obsession or mental condition.',
-    distinction: 'Suggests a medical or compulsive disorder behind the behavior.'
+    simpleDefinition: 'Driven by an extreme mental condition or disease.',
+    distinction: 'Implies a real medical illness.'
   },
   'unwholesome': {
-    simpleDefinition: 'Harmful to moral health, character, or general wellness.',
-    distinction: 'Emphasizes corrupting or undesirable influences.'
+    simpleDefinition: 'Bad for moral health or good character.',
+    distinction: 'Focuses on bad influences or habits.'
   },
   'vague': {
-    simpleDefinition: 'Lacking clear detail, precise facts, or sharp definition.',
-    distinction: 'Focuses on missing detail rather than having multiple meanings.'
+    simpleDefinition: 'Not clear or lacking detailed information.',
+    distinction: 'Focuses on missing details.'
   },
   'unclear': {
-    simpleDefinition: 'Difficult to see, hear, or understand with certainty.',
-    distinction: 'A general term for anything confusing or hard to decipher.'
+    simpleDefinition: 'Hard to see, hear, or understand.',
+    distinction: 'General word for anything confusing.'
   },
   'equivocal': {
-    simpleDefinition: 'Intentionally using ambiguous words to hide the truth or avoid commitment.',
-    distinction: 'Implies a deliberate attempt to mislead or remain undecided.'
+    simpleDefinition: 'Using confusing language to hide the truth.',
+    distinction: 'Used when trying to mislead someone.'
   },
   'tough': {
-    simpleDefinition: 'Strong, durable, and able to endure hardship without breaking.',
-    distinction: 'Emphasizes physical or mental strength rather than speed of recovery.'
+    simpleDefinition: 'Strong and able to handle rough treatment.',
+    distinction: 'Focuses on raw strength.'
   },
   'adaptable': {
-    simpleDefinition: 'Able to easily change habits or methods to fit new conditions.',
-    distinction: 'Focuses on adjusting smoothly to fresh environments.'
+    simpleDefinition: 'Able to easily change and fit new situations.',
+    distinction: 'Focuses on adjusting to new places.'
   },
   'flexible': {
-    simpleDefinition: 'Capable of bending or modifying plans without causing disruption.',
-    distinction: 'Emphasizes openness to change rather than endurance under pressure.'
+    simpleDefinition: 'Able to bend or change plans easily.',
+    distinction: 'Focuses on being open to change.'
   },
   'bargain': {
-    simpleDefinition: 'To discuss prices or conditions in order to reach a better deal.',
-    distinction: 'Focuses specifically on financial trade or price negotiations.'
+    simpleDefinition: 'Talking with someone to get a lower price.',
+    distinction: 'Focuses on money and prices.'
   },
   'mediate': {
-    simpleDefinition: 'To intervene between conflicting parties to bring about agreement.',
-    distinction: 'Implies a neutral third person guiding two opposing sides.'
+    simpleDefinition: 'Helping two arguing sides talk and agree.',
+    distinction: 'Used when a third person helps settle a fight.'
   },
   'settle': {
-    simpleDefinition: 'To reach a final agreement and resolve a disagreement completely.',
-    distinction: 'Focuses on bringing an issue to a closed conclusion.'
+    simpleDefinition: 'Reaching a final decision to end an argument.',
+    distinction: 'Focuses on making the final decision.'
   },
   'unavoidable': {
-    simpleDefinition: 'Impossible to prevent, bypass, or stay away from.',
-    distinction: 'Directly stresses that no action can alter the outcome.'
+    simpleDefinition: 'Impossible to stop or stay away from.',
+    distinction: 'Stresses that nothing can prevent it.'
   },
   'certain': {
     simpleDefinition: 'Completely sure to happen without any doubt.',
-    distinction: 'Expresses high confidence without the dramatic weight of inevitable.'
+    distinction: 'Simply means 100% sure.'
   },
   'eloquence': {
-    simpleDefinition: 'Fluent, persuasive, and beautiful expression in speech or writing.',
-    distinction: 'Emphasizes artistic beauty and emotional impact of expression.'
+    simpleDefinition: 'Speaking or writing in a beautiful, persuasive way.',
+    distinction: 'Focuses on graceful and moving words.'
   },
   'fluent': {
-    simpleDefinition: 'Able to express yourself smoothly, easily, and without pauses.',
-    distinction: 'Focuses on effortless flow rather than deep persuasion.'
+    simpleDefinition: 'Able to speak smoothly without stopping.',
+    distinction: 'Focuses on smooth flow of speech.'
   },
   'hesitant': {
-    simpleDefinition: 'Pausing or holding back before acting due to doubt or uncertainty.',
-    distinction: 'Focuses on the brief pause or delay caused by indecision.'
+    simpleDefinition: 'Pausing before acting because you feel unsure.',
+    distinction: 'Focuses on the short pause before acting.'
   },
   'unwilling': {
-    simpleDefinition: 'Refusing to give consent or participate in an action.',
-    distinction: 'Expresses direct refusal rather than temporary hesitation.'
+    simpleDefinition: 'Refusing to do something or agree to it.',
+    distinction: 'Means a direct refusal.'
   },
   'speculate': {
-    simpleDefinition: 'Forming opinions or theories about something without firm proof.',
-    distinction: 'Focuses on making educated guesses based on incomplete information.'
+    simpleDefinition: 'Guessing about something without real proof.',
+    distinction: 'Focuses on making a guess.'
   },
   'postulate': {
-    simpleDefinition: 'Suggesting a core statement or principle as a starting foundation.',
-    distinction: 'Used in formal or academic contexts as a starting premise.'
+    simpleDefinition: 'Suggesting an idea as a starting point for debate.',
+    distinction: 'Used when starting a formal theory.'
   }
 };
 
@@ -192,19 +192,15 @@ function getFallbackSynonymDetails(synWord: string, mainWord: string): { simpleD
 
   const mapped = SYNONYM_DETAILS_MAP[cleanSyn];
   if (mapped) {
-    let distinctionText = mapped.distinction;
-    if (!distinctionText.toLowerCase().includes(cleanMain)) {
-      distinctionText = `Compared to ${cleanMain}, "${cleanSyn}" ${distinctionText.charAt(0).toLowerCase() + distinctionText.slice(1)}`;
-    }
     return {
       simpleDefinition: mapped.simpleDefinition,
-      distinction: distinctionText
+      distinction: mapped.distinction
     };
   }
 
   return {
-    simpleDefinition: `Exhibiting or describing key qualities of ${cleanSyn}.`,
-    distinction: `Compared to ${cleanMain}, "${cleanSyn}" carries a distinct tone and nuance specific to ${cleanSyn}.`
+    simpleDefinition: `Refers to ${cleanSyn} in simple terms.`,
+    distinction: `Focuses on ${cleanSyn} qualities compared to ${cleanMain}.`
   };
 }
 
