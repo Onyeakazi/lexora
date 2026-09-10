@@ -2,6 +2,7 @@ import { WordEntry, PartOfSpeech, PracticeQuestion } from '../models/word';
 import { SAMPLE_WORDS } from '../data/words';
 import { OFFLINE_DICTIONARY_DATA } from '../data/offlineDictionary';
 import { storageService } from './storageService';
+import { aiService } from './aiService';
 
 const API_CACHE_KEY = 'lexora_api_words_cache';
 
@@ -173,7 +174,13 @@ export const dictionaryService = {
 
     // 1. Local sync match (0ms response)
     const local = this.getWordLocal(cleanTerm);
-    if (local) return await this.enrichSynonymsIfNeeded(local);
+    if (local) {
+      let enriched = await this.enrichSynonymsIfNeeded(local);
+      if (aiService.isAIEnabled()) {
+        enriched = await aiService.enrichWordEntryWithAI(enriched);
+      }
+      return enriched;
+    }
 
     // 2. Try Free Dictionary API with generous 4000ms timeout
     try {
@@ -183,6 +190,9 @@ export const dictionaryService = {
         if (data && data.length > 0) {
           let transformed = this.transformApiEntry(data[0]);
           transformed = await this.enrichSynonymsIfNeeded(transformed);
+          if (aiService.isAIEnabled()) {
+            transformed = await aiService.enrichWordEntryWithAI(transformed);
+          }
           this.cacheWord(cleanTerm, transformed);
           return transformed;
         }
@@ -199,6 +209,9 @@ export const dictionaryService = {
         if (dmData && dmData.length > 0 && dmData[0].defs && dmData[0].defs.length > 0) {
           let transformed = this.transformDatamuseEntry(dmData[0]);
           transformed = await this.enrichSynonymsIfNeeded(transformed);
+          if (aiService.isAIEnabled()) {
+            transformed = await aiService.enrichWordEntryWithAI(transformed);
+          }
           this.cacheWord(cleanTerm, transformed);
           return transformed;
         }
@@ -210,6 +223,9 @@ export const dictionaryService = {
     // 4. Fallback generator
     let fallback = this.generateFallbackEntry(cleanTerm);
     fallback = await this.enrichSynonymsIfNeeded(fallback);
+    if (aiService.isAIEnabled()) {
+      fallback = await aiService.enrichWordEntryWithAI(fallback);
+    }
     this.cacheWord(cleanTerm, fallback);
     return fallback;
   },

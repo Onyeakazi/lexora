@@ -1,3 +1,5 @@
+import { WordEntry } from '../models/word';
+
 interface GeminiResponsePart {
   text?: string;
 }
@@ -17,11 +19,92 @@ export interface LaymanRegenerationResult {
   thinkOfItAs: string;
 }
 
+export interface AIErichedWordDetails {
+  simple: string;
+  thinkOfItAs: string;
+  commonUseExample: string;
+  whenToUse: string[];
+  whenNotToUse: string[];
+  memoryTip?: string;
+}
+
 export const aiService = {
   getApiKey(): string {
     return (import.meta.env.VITE_GEMINI_API_KEY || '').trim();
   },
 
+  isAIEnabled(): boolean {
+    return this.getApiKey().length > 0;
+  },
+
+  // 1. Full Word Entry AI Enrichment (Used automatically when searching any word across Lexora)
+  async enrichWordEntryWithAI(entry: WordEntry): Promise<WordEntry> {
+    const apiKey = this.getApiKey();
+    if (!apiKey) return entry;
+
+    const primaryDef = entry.definitions[0]?.dictionary || `The word ${entry.word}`;
+    const pos = entry.partOfSpeech.join(', ') || 'word';
+
+    try {
+      const prompt = `You are the master AI lexicographer for Lexora.
+Word: "${entry.word}"
+Part of Speech: "${pos}"
+Original Definition: "${primaryDef}"
+
+Task: Generate a rich, 5th-grade plain English breakdown and real-world usage structure for this word.
+Return ONLY valid JSON in this exact structure without markdown backticks:
+{
+  "simple": "A clear, 5th-grade ELI5 explanation without formal dictionary jargon",
+  "thinkOfItAs": "A vivid, intuitive real-life visual picture or metaphor",
+  "commonUseExample": "An authentic situational sentence connecting a real scenario to the word in quote marks (e.g. 'Someone obsessed with reading disaster news has a \"morbid fascination\".')",
+  "whenToUse": ["Clear bullet point on when to use this word", "Second clear situation to use"],
+  "whenNotToUse": ["Clear caution bullet point on when NOT to use", "Common confusion to avoid"],
+  "memoryTip": "A memorable 1-sentence mnemonic anchor"
+}`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 500
+            }
+          })
+        }
+      );
+
+      if (response.ok) {
+        const data: GeminiApiResponse = await response.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const parsed: AIErichedWordDetails = JSON.parse(cleanedText);
+
+          if (parsed.simple) {
+            entry.definitions[0] = {
+              ...entry.definitions[0],
+              simple: parsed.simple,
+              thinkOfItAs: parsed.thinkOfItAs || entry.definitions[0]?.thinkOfItAs
+            };
+          }
+          if (parsed.commonUseExample) entry.commonUseExample = parsed.commonUseExample;
+          if (parsed.whenToUse && parsed.whenToUse.length > 0) entry.whenToUse = parsed.whenToUse;
+          if (parsed.whenNotToUse && parsed.whenNotToUse.length > 0) entry.whenNotToUse = parsed.whenNotToUse;
+          if (parsed.memoryTip) entry.memoryTip = parsed.memoryTip;
+        }
+      }
+    } catch (err) {
+      console.warn('Gemini API word enrichment failed, keeping default entry', err);
+    }
+
+    return entry;
+  },
+
+  // 2. Layman Spin Generator (Used by the Spin AI Explanation button in Word Details)
   async generateLaymanExplanation(
     word: string,
     definition: string,
@@ -77,10 +160,10 @@ Rules:
       }
     }
 
-    // Creative dynamic multi-angle fallback generator
     return this.generateDynamicLocalVariant(word, definition, partOfSpeech);
   },
 
+  // 3. Dynamic Local Multi-Angle Generator (Fallback when API key is missing or offline)
   generateDynamicLocalVariant(word: string, def: string, pos: string): LaymanRegenerationResult {
     const cleanDef = def
       .replace(/^\s*\([^)]*\)\s*/g, '')
