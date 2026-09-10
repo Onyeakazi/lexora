@@ -66,8 +66,8 @@ Task: Generate a rich 5th-grade plain English breakdown for "${entry.word}" and 
 CRITICAL INSTRUCTIONS FOR SYNONYMS:
 - Provide 3 to 5 relevant synonyms.
 - For EACH synonym:
-  - "simpleDefinition": Write a clear 1-sentence 5th-grade plain English explanation of what that synonym means. DO NOT use generic phrases like "Refers to X in plain English".
-  - "distinction": Write a specific 1-sentence explanation of how that synonym differs in tone, intensity, or context from "${entry.word}". DO NOT use generic formulas like "emphasizes X characteristics".
+  - "simpleDefinition": Write a clear 1-sentence 5th-grade plain English explanation of what that synonym means.
+  - "distinction": Write a specific 1-sentence explanation comparing this synonym directly to "${entry.word}" (e.g. 'Compared to ${entry.word}, "ghoulish" is more creepy and grotesque, with an eerie focus on death.').
 
 Return ONLY valid JSON in this exact structure without markdown backticks:
 {

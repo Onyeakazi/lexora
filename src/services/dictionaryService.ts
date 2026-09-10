@@ -191,11 +191,20 @@ function getFallbackSynonymDetails(synWord: string, mainWord: string): { simpleD
   const cleanMain = mainWord.toLowerCase();
 
   const mapped = SYNONYM_DETAILS_MAP[cleanSyn];
-  if (mapped) return mapped;
+  if (mapped) {
+    let distinctionText = mapped.distinction;
+    if (!distinctionText.toLowerCase().includes(cleanMain)) {
+      distinctionText = `Compared to ${cleanMain}, "${cleanSyn}" ${distinctionText.charAt(0).toLowerCase() + distinctionText.slice(1)}`;
+    }
+    return {
+      simpleDefinition: mapped.simpleDefinition,
+      distinction: distinctionText
+    };
+  }
 
   return {
-    simpleDefinition: `Exhibiting or describing the qualities of ${cleanSyn}.`,
-    distinction: `Differs from "${cleanMain}" by bringing out a unique nuance of ${cleanSyn}.`
+    simpleDefinition: `Exhibiting or describing key qualities of ${cleanSyn}.`,
+    distinction: `Compared to ${cleanMain}, "${cleanSyn}" carries a distinct tone and nuance specific to ${cleanSyn}.`
   };
 }
 
