@@ -191,16 +191,20 @@ function getFallbackSynonymDetails(synWord: string, mainWord: string): { simpleD
   const cleanMain = mainWord.toLowerCase();
 
   const mapped = SYNONYM_DETAILS_MAP[cleanSyn];
-  if (mapped) {
-    return {
-      simpleDefinition: mapped.simpleDefinition,
-      distinction: mapped.distinction
-    };
+  let distBase = mapped?.distinction || `Focuses on ${cleanSyn} traits`;
+
+  let finalDist = distBase;
+  if (!distBase.toLowerCase().includes(cleanMain)) {
+    if (distBase.startsWith('More') || distBase.startsWith('Broader') || distBase.startsWith('Much more')) {
+      finalDist = `${distBase} than ${cleanMain}.`;
+    } else {
+      finalDist = `${distBase}, unlike ${cleanMain}.`;
+    }
   }
 
   return {
-    simpleDefinition: `Refers to ${cleanSyn} in simple terms.`,
-    distinction: `Focuses on ${cleanSyn} qualities compared to ${cleanMain}.`
+    simpleDefinition: mapped?.simpleDefinition || `Refers to ${cleanSyn} in simple terms.`,
+    distinction: finalDist
   };
 }
 

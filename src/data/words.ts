@@ -67,10 +67,10 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'A hypothetical question'
     ],
     synonyms: [
-      { word: 'Possible', simpleDefinition: 'Something that could actually happen in real life.', distinction: 'Means it can really happen.' },
-      { word: 'Theoretical', simpleDefinition: 'Based on ideas or rules rather than real practice.', distinction: 'Based on rules or theories.' },
-      { word: 'Imaginary', simpleDefinition: 'Existing only in your mind, not real.', distinction: 'Means completely pretend.' },
-      { word: 'Supposed', simpleDefinition: 'Assumed to be true for an argument.', distinction: 'Assumed just for discussion.' }
+      { word: 'Possible', simpleDefinition: 'Something that could actually happen in real life.', distinction: 'Means it can really happen, unlike hypothetical.' },
+      { word: 'Theoretical', simpleDefinition: 'Based on ideas or rules rather than real practice.', distinction: 'Based on rules, unlike hypothetical.' },
+      { word: 'Imaginary', simpleDefinition: 'Existing only in your mind, not real.', distinction: 'Completely pretend, unlike hypothetical.' },
+      { word: 'Supposed', simpleDefinition: 'Assumed to be true for an argument.', distinction: 'Assumed just for discussion, unlike hypothetical.' }
     ],
     antonyms: ['Actual', 'Real', 'Factual', 'Proven', 'Certain'],
     memoryTip: 'Hypothetical = "What if?"',
@@ -158,9 +158,9 @@ export const SAMPLE_WORDS: WordEntry[] = [
       'Resilient spirit'
     ],
     synonyms: [
-      { word: 'Tough', simpleDefinition: 'Strong and able to handle rough treatment.', distinction: 'Focuses on raw strength.' },
-      { word: 'Adaptable', simpleDefinition: 'Able to easily adjust to new situations.', distinction: 'Focuses on fitting into new places.' },
-      { word: 'Flexible', simpleDefinition: 'Able to bend or change plans easily.', distinction: 'Focuses on being open to change.' }
+      { word: 'Tough', simpleDefinition: 'Strong and able to handle rough treatment.', distinction: 'Focuses on raw strength, unlike resilient.' },
+      { word: 'Adaptable', simpleDefinition: 'Able to easily adjust to new situations.', distinction: 'Focuses on fitting into new places, unlike resilient.' },
+      { word: 'Flexible', simpleDefinition: 'Able to bend or change plans easily.', distinction: 'Focuses on changing easily, unlike resilient.' }
     ],
     antonyms: ['Fragile', 'Vulnerable', 'Weak', 'Delicate'],
     memoryTip: 'Resilient = Bounce back!',

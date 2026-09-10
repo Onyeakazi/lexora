@@ -67,7 +67,7 @@ CRITICAL INSTRUCTIONS FOR SYNONYMS:
 - Provide 3 to 5 relevant synonyms.
 - For EACH synonym:
   - "simpleDefinition": Write a short 1-sentence 5th-grade ELI5 explanation of what that synonym means.
-  - "distinction": Write a VERY SHORT, SIMPLE 5-10 word note comparing it to "${entry.word}" (e.g. 'More scary and creepy than morbid', 'Focuses on hurting someone\'s feelings', or 'Applies to any bad habit').
+  - "distinction": Write a VERY SHORT, SIMPLE 5-10 word note directly connecting it to "${entry.word}" (e.g. 'More scary and creepy than ${entry.word}', 'Focuses on hurting feelings, unlike ${entry.word}', or 'Broader than ${entry.word}').
 
 Return ONLY valid JSON in this exact structure without markdown backticks:
 {
