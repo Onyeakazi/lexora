@@ -768,36 +768,35 @@ export const dictionaryService = {
     }
 
     // Dynamic Natural Sentence Construction based on Part of Speech
-
     if (pos === 'adverb') {
       return [
-        { context: 'Everyday', sentence: `He ${clean} stays up late on weekdays because he gets up early for work.` },
-        { context: 'Work', sentence: `Our team ${clean} encounters issues when instructions are followed carefully.` },
-        { context: 'Conversation', sentence: `I ${clean} see that happen in real life nowadays.` }
+        { context: 'Everyday', sentence: `She ${clean} checks her phone during dinner because she expects an urgent call.` },
+        { context: 'Work', sentence: `The team ${clean} completes audits ahead of schedule when well-prepared.` },
+        { context: 'Conversation', sentence: `I ${clean} notice that happening when we discuss this topic.` }
       ];
     } else if (pos === 'adjective') {
       return [
-        { context: 'Everyday', sentence: `She is known for her ${clean} approach to managing her daily responsibilities.` },
-        { context: 'Work', sentence: `The manager gave a ${clean} presentation that persuaded the entire team.` },
-        { context: 'Conversation', sentence: `That felt like a very ${clean} response to a challenging situation.` }
+        { context: 'Everyday', sentence: `He was ${clean} during the discussion, making sure everyone felt heard.` },
+        { context: 'Work', sentence: `The manager gave a ${clean} presentation that convinced the executive team.` },
+        { context: 'Conversation', sentence: `That was a very ${clean} answer to a tricky question.` }
       ];
     } else if (pos === 'verb') {
       return [
-        { context: 'Everyday', sentence: `She tried to ${clean} her thoughts clearly so everyone could follow along.` },
-        { context: 'Work', sentence: `The team will ${clean} the final agreement before signing the contract.` },
-        { context: 'Conversation', sentence: `We need to ${clean} the best way forward together.` }
+        { context: 'Everyday', sentence: `She decided to ${clean} her thoughts out loud so her friend understood.` },
+        { context: 'Work', sentence: `The director asked the team to ${clean} their goals for the project.` },
+        { context: 'Conversation', sentence: `You should ${clean} your ideas clearly during the meeting tomorrow.` }
       ];
     } else if (pos === 'noun') {
       return [
-        { context: 'Everyday', sentence: `Understanding the concept of ${clean} helps clarify daily discussions.` },
-        { context: 'Work', sentence: `The team evaluated key factors regarding ${clean} during the review.` },
-        { context: 'Academic', sentence: `Researchers presented a new study on ${clean} supported by field data.` }
+        { context: 'Everyday', sentence: `He took the stairs to the top floor because his ${clean} makes him panic in small elevators.` },
+        { context: 'Work', sentence: `The team made office adjustments to avoid triggering issues related to ${clean}.` },
+        { context: 'Academic', sentence: `Researchers published a new study analyzing how specialized therapy reduces ${clean}.` }
       ];
     }
 
     return [
-      { context: 'Everyday', sentence: `Using ${clean} correctly improves the clarity of your communication.` },
-      { context: 'Work', sentence: `The executive highlighted ${clean} as a key factor during the quarterly meeting.` }
+      { context: 'Everyday', sentence: `Understanding ${clean} helps in real-life conversations.` },
+      { context: 'Work', sentence: `The executive discussed ${clean} as a key focus area during the review.` }
     ];
   },
 
@@ -830,7 +829,7 @@ export const dictionaryService = {
 
     let cleanDef = def
       .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is)\s+/i, '')
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being)\s+/i, '')
       .replace(/;\s*also\s*:.*$/i, '')
       .replace(/[\.\s]+$/, '');
 
@@ -843,24 +842,24 @@ export const dictionaryService = {
     const capitalizeWord = word.charAt(0).toUpperCase() + word.slice(1);
 
     if (pos === 'adverb') {
-      return `${capitalizeWord} means doing something in a way that is ${cleanDef}. It describes an action that occurs only under those specific conditions.`;
+      return `${capitalizeWord} means doing an action in a ${cleanDef} manner.`;
     } else if (pos === 'adjective') {
       if (synonyms.length > 0 && synonyms[0] !== cleanWord) {
         const simpleSyn = FORMAL_TO_SIMPLE_MAP[synonyms[0]] || synonyms[0];
         return `${capitalizeWord} describes something that is ${simpleSyn}—meaning ${cleanDef}.`;
       }
-      return `${capitalizeWord} describes something or someone that is ${cleanDef}.`;
+      return `${capitalizeWord} describes someone or something that is ${cleanDef}.`;
     } else if (pos === 'verb') {
-      return `To ${word} means to ${cleanDef}.`;
+      return `To ${word} means to ${cleanDef}. It describes taking action to perform this directly.`;
     } else if (pos === 'noun') {
-      return `A ${word} is ${cleanDef}.`;
+      return `${capitalizeWord} refers to ${cleanDef}. It describes a real-life state, feeling, or condition.`;
     }
 
     return `${capitalizeWord} refers to ${cleanDef}.`;
   },
 
   // PURE VIVID MENTAL IMAGE ENGINE — ZERO DICTIONARY REUSE
-  generatePureVividMentalImage(word: string, def: string, pos: string, synonyms: string[], index: number): string {
+  generatePureVividMentalImage(word: string, def: string, pos: string, _synonyms?: string[], _index?: number): string {
     const cleanWord = word.toLowerCase();
     const lowerDef = def.toLowerCase();
 
@@ -887,42 +886,37 @@ export const dictionaryService = {
 
     // 1. Time / Frequency / Duration
     if (lowerDef.includes('time') || lowerDef.includes('short') || lowerDef.includes('long') || lowerDef.includes('brief') || lowerDef.includes('often') || lowerDef.includes('rare') || lowerDef.includes('infrequent')) {
-      return `Think of a fleeting moment in time — something that happens in a flash and passes before you know it.`;
+      return `A fleeting moment in time — something that happens in a flash and passes before you know it.`;
     }
 
     // 2. Care / Precision / Detail
     if (lowerDef.includes('detail') || lowerDef.includes('careful') || lowerDef.includes('precise') || lowerDef.includes('thorough') || lowerDef.includes('attention')) {
-      return `Think of double-checking your work with a magnifying glass to make sure not a single mistake slips through.`;
+      return `Double-checking your work under a bright light to make sure not a single mistake slips through.`;
     }
 
     // 3. Speech / Communication / Sound
     if (lowerDef.includes('speech') || lowerDef.includes('talk') || lowerDef.includes('speak') || lowerDef.includes('word') || lowerDef.includes('express') || lowerDef.includes('voice')) {
-      return `Think of expressing a thought so clearly that anyone listening understands your exact meaning instantly.`;
+      return `Expressing a thought so clearly out loud that anyone listening understands your exact meaning instantly.`;
     }
 
     // 4. Strength / Resistance / Flexibility
     if (lowerDef.includes('strong') || lowerDef.includes('power') || lowerDef.includes('tough') || lowerDef.includes('recover') || lowerDef.includes('difficult')) {
-      return `Think of a deep-rooted tree during a stormy gust — bending gracefully with the wind without breaking.`;
+      return `A deep-rooted tree during a stormy gust — bending gracefully with the wind without breaking.`;
     }
 
     // 5. Mind / Thought / Ideas
     if (lowerDef.includes('mind') || lowerDef.includes('idea') || lowerDef.includes('thought') || lowerDef.includes('reason') || lowerDef.includes('logic') || lowerDef.includes('believe')) {
-      return `Think of solving a puzzle in your mind by connecting pieces until the full picture makes complete sense.`;
+      return `Solving a puzzle in your mind by connecting pieces until the full picture makes complete sense.`;
     }
 
     // 6. Generosity / Emotion / Heart
     if (lowerDef.includes('kind') || lowerDef.includes('give') || lowerDef.includes('generous') || lowerDef.includes('feeling') || lowerDef.includes('love') || lowerDef.includes('help')) {
-      return `Think of offering a warm umbrella to someone standing in the rain without asking for anything in return.`;
-    }
-
-    const keySynonym = synonyms[index] || synonyms[0];
-    if (keySynonym && keySynonym !== cleanWord) {
-      return `Picture a real-life situation that is clearly ${keySynonym} — capturing this exact quality when you see it.`;
+      return `Offering a warm umbrella to someone standing in the rain without asking for anything in return.`;
     }
 
     let cleanDef = def
       .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is)\s+/i, '')
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is|An abnormal fear of|A fear of)\s+/i, '')
       .replace(/[\.\s]+$/, '')
       .toLowerCase();
 
@@ -932,14 +926,14 @@ export const dictionaryService = {
     });
 
     if (pos === 'adverb') {
-      return `Think of a specific moment when an action happens ${cleanDef}.`;
+      return `Performing an action ${cleanDef} in a real situation.`;
     } else if (pos === 'adjective') {
-      return `Picture a person, event, or object that stands out as distinctly ${cleanDef}.`;
+      return `Seeing someone or something exhibiting ${cleanDef} in action.`;
     } else if (pos === 'verb') {
-      return `Imagine taking a deliberate step to ${cleanDef} in your daily life.`;
+      return `Taking a deliberate step to ${cleanDef} when it counts.`;
     }
 
-    return `Picture a concrete real-life scenario representing ${cleanDef}.`;
+    return `Experiencing or observing ${cleanDef} in real life.`;
   },
 
   generateWhenToUse(word: string, pos: string, synonyms: string[]): string[] {

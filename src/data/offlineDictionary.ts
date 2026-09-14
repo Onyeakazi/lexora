@@ -82,6 +82,87 @@ export const OFFLINE_DICTIONARY_DATA: Record<string, WordEntry> = {
     ],
     antonyms: ['Inarticulate', 'Hesitant', 'Mumbled', 'Vague']
   },
+  'claustrophobia': {
+    id: 'claustrophobia',
+    word: 'claustrophobia',
+    partOfSpeech: ['noun'],
+    definitions: [
+      {
+        dictionary: 'An extreme or irrational fear of confined or tight spaces.',
+        simple: 'Claustrophobia is an intense fear of being trapped in small, crowded, or enclosed spaces where you feel like you cannot escape or breathe easily.',
+        thinkOfItAs: 'Feeling your heart race and wanting to break free when stuck in a tiny, packed elevator.'
+      }
+    ],
+    pronunciation: {
+      british: { ipa: '/ˌklɒs.trəˈfəʊ.bi.ə/', phonetic: 'klos-truh-FOH-bee-uh' },
+      american: { ipa: '/ˌklɑː.strəˈfoʊ.bi.ə/', phonetic: 'klahs-truh-FOH-bee-uh' }
+    },
+    usage: {
+      isVerb: false,
+      explanation: '"Claustrophobia" is a noun. Use it to describe the intense fear or medical condition caused by small or crowded spaces.'
+    },
+    examples: [
+      { context: 'Everyday', sentence: 'He took the stairs to the 8th floor because his claustrophobia makes him panic in small elevators.' },
+      { context: 'Work', sentence: 'She requested a desk near the window because working in a small, enclosed room triggered her claustrophobia.' },
+      { context: 'Academic', sentence: 'Psychologists study how virtual reality exposure therapy helps patients overcome claustrophobia.' }
+    ],
+    whenToUse: [
+      'Describing someone\'s panic in tight spaces like elevators, tunnels, or crowded rooms',
+      'Explaining why someone avoids small enclosed places'
+    ],
+    whenNotToUse: [
+      'Describing general fear of heights (acrophobia) or fear of open spaces (agoraphobia)'
+    ],
+    commonPhrases: ['Suffer from claustrophobia', 'Trigger claustrophobia', 'Severe claustrophobia'],
+    synonyms: [
+      { word: 'Fear of tight spaces', simpleDefinition: 'Plain English term for feeling panicked in small rooms.', distinction: 'Everyday phrase rather than the medical name.' }
+    ],
+    antonyms: ['Agoraphobia', 'Comfort in tight spaces'],
+    commonUseExample: '"I can\'t take the elevator, let\'s use the stairs." — Someone experiencing claustrophobia.',
+    memoryTip: 'Claustrophobia = Closed space panic!'
+  },
+  'soliloquize': {
+    id: 'soliloquize',
+    word: 'soliloquize',
+    partOfSpeech: ['verb'],
+    definitions: [
+      {
+        dictionary: 'Speak one\'s thoughts aloud when by oneself or regardless of any hearers, especially as a character in a play.',
+        simple: 'To soliloquize means to speak your inner thoughts out loud when you are completely alone, especially so an audience can hear what is happening in your mind.',
+        thinkOfItAs: 'Talking to yourself out loud on stage to reveal your secret thoughts to the audience.'
+      }
+    ],
+    pronunciation: {
+      british: { ipa: '/səˈlɪl.ə.kwaɪz/', phonetic: 'suh-LIL-uh-kwyz' },
+      american: { ipa: '/səˈlɪl.ə.kwaɪz/', phonetic: 'suh-LIL-uh-kwyz' }
+    },
+    usage: {
+      isVerb: true,
+      explanation: '"Soliloquize" is an action verb. Notice how it changes forms across present, past, and future tenses.',
+      present: ['The actor soliloquizes alone on stage during Act II.'],
+      past: ['Hamlet soliloquized about life and death in his famous monologue.'],
+      future: ['She will soliloquize before the main character enters the scene.']
+    },
+    examples: [
+      { context: 'Everyday', sentence: 'He paced around his living room soliloquizing about whether he should quit his job.' },
+      { context: 'Work', sentence: 'The director asked the lead actor to soliloquize more passionately during the solo scene.' },
+      { context: 'Academic', sentence: 'Literature students analyzed how Shakespeare\'s characters soliloquize to reveal hidden motives.' }
+    ],
+    whenToUse: [
+      'Describing an actor or character speaking their thoughts out loud alone',
+      'Describing someone talking to themselves out loud while making a big decision'
+    ],
+    whenNotToUse: [
+      'Describing a conversation between two or more people (dialogue)'
+    ],
+    commonPhrases: ['Soliloquize on stage', 'Soliloquize aloud', 'Soliloquize private thoughts'],
+    synonyms: [
+      { word: 'Monologuize', simpleDefinition: 'To deliver a long speech alone.', distinction: 'Monologues can be spoken to other people, whereas soliloquizing is done alone.' }
+    ],
+    antonyms: ['Converse', 'Discuss'],
+    commonUseExample: '"Why did I trust him? I should have known!" — A character soliloquizing alone on stage.',
+    memoryTip: 'Soliloquize = Speak solo thoughts aloud!'
+  },
   'audacious': {
     id: 'audacious',
     word: 'audacious',

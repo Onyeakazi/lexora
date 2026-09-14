@@ -56,14 +56,20 @@ export const aiService = {
       : '';
 
     try {
-      const prompt = `You are the master AI lexicographer for Lexora dictionary.
+      const prompt = `You are the master ELI5 AI lexicographer for Lexora dictionary.
 Word: "${entry.word}"
 Part of Speech: "${pos}"
 Original Definition: "${primaryDef}"
 ${synList ? `Target Synonyms to Explain: ${synList}` : ''}
 
-Task: Generate a rich 5th-grade plain English breakdown for "${entry.word}" and its synonyms.
-CRITICAL INSTRUCTIONS FOR SYNONYMS:
+Task: Generate a rich, natural 5th-grade ELI5 plain English breakdown for "${entry.word}" and its synonyms.
+CRITICAL RULES FOR DEFINITION & EXAMPLES:
+1. "simple": Write a direct, conversational 5th-grade ELI5 explanation of what "${entry.word}" means and does in real life (e.g., 'Claustrophobia is an intense, overwhelming fear of being trapped in small or enclosed spaces where you can't get out easily.'). DO NOT use meta templates like 'At its heart' or 'Think of X as'.
+2. "thinkOfItAs": Write an ACTIVE real-life action phrase or vivid scenario describing what experiencing or doing this feels like (e.g., 'Feeling your heart race and wanting to break free when stuck in a tiny, crowded elevator'). Start with an active verb or vivid action phrase!
+3. "commonUseExample": Write a practical situational scenario or quoted dialogue showing how people actually use or experience the word (e.g., '\'I can\'t take the elevator, let\'s use the stairs.\' — Someone managing claustrophobia in a building.').
+4. "examples": Provide 3 PRACTICAL, REAL-WORLD context sentences (Everyday, Work, Academic). Show real people in real situations (e.g. 'Everyday': 'He took the stairs to the 8th floor because elevators trigger his claustrophobia.'). DO NOT write generic templates like 'Understanding the concept of X helps clarify daily discussions.'
+
+CRITICAL RULES FOR SYNONYMS:
 - Provide 3 to 5 relevant synonyms.
 - For EACH synonym:
   - "simpleDefinition": Write a short 1-sentence 5th-grade ELI5 explanation of what that synonym means.
@@ -71,17 +77,22 @@ CRITICAL INSTRUCTIONS FOR SYNONYMS:
 
 Return ONLY valid JSON in this exact structure without markdown backticks:
 {
-  "simple": "A clear, 5th-grade ELI5 explanation without formal dictionary jargon",
-  "thinkOfItAs": "A vivid, intuitive real-life visual picture or metaphor",
-  "commonUseExample": "An authentic situational sentence connecting a real scenario to the word in quote marks (e.g. 'Someone obsessed with reading disaster news has a \"morbid fascination\".')",
+  "simple": "A clear, 5th-grade ELI5 explanation",
+  "thinkOfItAs": "An active visual picture or action phrase",
+  "commonUseExample": "An authentic situational sentence or quote",
+  "examples": [
+    { "context": "Everyday", "sentence": "Practical real-life sentence showing real people in action." },
+    { "context": "Work", "sentence": "Practical workplace sentence showing real people at work." },
+    { "context": "Academic", "sentence": "Practical formal/study sentence showing real research or study." }
+  ],
   "whenToUse": ["Clear bullet point on when to use this word", "Second clear situation to use"],
   "whenNotToUse": ["Clear caution bullet point on when NOT to use", "Common confusion to avoid"],
   "memoryTip": "A memorable 1-sentence mnemonic anchor",
   "synonyms": [
     {
       "word": "synonym word name",
-      "simpleDefinition": "Specific plain English explanation of what this synonym means",
-      "distinction": "Specific difference in nuance, intensity, or tone compared to ${entry.word}"
+      "simpleDefinition": "Short 5th-grade definition of this synonym",
+      "distinction": "Short simple 5-10 word note comparing directly to ${entry.word}"
     }
   ]
 }`;
@@ -95,7 +106,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
             contents: [{ parts: [{ text: prompt }] }],
             generationConfig: {
               temperature: 0.7,
-              maxOutputTokens: 1000
+              maxOutputTokens: 1200
             }
           })
         }
@@ -106,7 +117,7 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (rawText) {
           const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-          const parsed: AIErichedWordDetails = JSON.parse(cleanedText);
+          const parsed: AIErichedWordDetails & { examples?: WordEntry['examples'] } = JSON.parse(cleanedText);
 
           if (parsed.simple) {
             entry.definitions[0] = {
@@ -116,6 +127,9 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
             };
           }
           if (parsed.commonUseExample) entry.commonUseExample = parsed.commonUseExample;
+          if (parsed.examples && Array.isArray(parsed.examples) && parsed.examples.length > 0) {
+            entry.examples = parsed.examples;
+          }
           if (parsed.whenToUse && parsed.whenToUse.length > 0) entry.whenToUse = parsed.whenToUse;
           if (parsed.whenNotToUse && parsed.whenNotToUse.length > 0) entry.whenNotToUse = parsed.whenNotToUse;
           if (parsed.memoryTip) entry.memoryTip = parsed.memoryTip;
@@ -145,16 +159,17 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
 
     if (apiKey) {
       try {
-        const prompt = `You are an expert ELI5 (Explain Like I'm 5) educator for the Lexora dictionary app.
+        const prompt = `You are an expert ELI5 educator for the Lexora dictionary app.
 Word: "${word}"
 Part of Speech: "${partOfSpeech}"
 Original Definition: "${definition}"
 
-Task: Generate a BRAND NEW, FRESH, and UNIQUE layman explanation in 5th-grade plain English, along with a vivid real-life visual analogy ("Think of it as...").
-Rules:
-- DO NOT reuse formal dictionary jargon.
-- Make it totally distinct, engaging, and easy for a beginner to grasp.
-- Return ONLY valid JSON in this exact structure without markdown backticks:
+Task: Generate a BRAND NEW, FRESH, and PRACTICAL layman breakdown for "${word}".
+Requirements:
+1. "simple": Write a direct, clear 5th-grade ELI5 explanation of what "${word}" means or does in real life. DO NOT use generic meta phrases like 'Think of X as' or 'At its heart'.
+2. "thinkOfItAs": Write an ACTIVE real-world action phrase or vivid scene (e.g., 'talking to yourself out loud so everyone knows your inner thoughts' or 'feeling trapped in a tiny elevator where you can't breathe'). Start with an active verb or vivid action phrase!
+
+Return ONLY valid JSON:
 {"simple": "...", "thinkOfItAs": "..."}`;
 
         const response = await fetch(
@@ -198,34 +213,33 @@ Rules:
   generateDynamicLocalVariant(word: string, def: string, pos: string): LaymanRegenerationResult {
     const cleanDef = def
       .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of)\s+/i, '')
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being)\s+/i, '')
       .replace(/\.$/, '')
       .trim();
 
-    const angles: LaymanRegenerationResult[] = [
-      {
-        simple: `Think of "${word}" as describing something that is completely focused on ${cleanDef.toLowerCase()}. In simple terms, when you see this happen, it means ${cleanDef.toLowerCase()} without extra complication.`,
-        thinkOfItAs: `Picture a high-definition zoom lens pointing straight at ${cleanDef.toLowerCase()} — isolating this exact trait from everything else.`
-      },
-      {
-        simple: `If you were explaining "${word}" to a 5th grader: it is a ${pos} used when something or someone exhibits ${cleanDef.toLowerCase()}.`,
-        thinkOfItAs: `Think of a bright yellow highlighter marking "${cleanDef.toLowerCase()}" in a book so it jumps off the page.`
-      },
-      {
-        simple: `In plain everyday English, using "${word}" is the quickest way to describe ${cleanDef.toLowerCase()} without needing long formal explanations.`,
-        thinkOfItAs: `Picture a light switch clicking on in a dark room — instantly connecting "${word}" with ${cleanDef.toLowerCase()}.`
-      },
-      {
-        simple: `At its heart, "${word}" captures the exact feeling or situation of ${cleanDef.toLowerCase()} in a single clear word.`,
-        thinkOfItAs: `Imagine how a cartoon scene would demonstrate ${cleanDef.toLowerCase()} in 3 seconds flat with zero spoken words.`
-      },
-      {
-        simple: `When people use "${word}", they are pointing out an instance of ${cleanDef.toLowerCase()} in action.`,
-        thinkOfItAs: `Think of taking the shortcut path through the park — direct, clear, and focused on ${cleanDef.toLowerCase()}.`
-      }
-    ];
+    const lowerDef = cleanDef.toLowerCase();
+    const capWord = word.charAt(0).toUpperCase() + word.slice(1);
 
-    const randomIndex = Math.floor(Math.random() * angles.length);
-    return angles[randomIndex];
+    if (pos === 'verb') {
+      return {
+        simple: `To ${word} means to ${lowerDef}. It describes taking action to perform this directly in a situation.`,
+        thinkOfItAs: `Taking a deliberate step to ${lowerDef} right when it counts.`
+      };
+    } else if (pos === 'noun') {
+      return {
+        simple: `${capWord} refers to ${lowerDef}. It describes a real-life state, feeling, or condition that someone experiences.`,
+        thinkOfItAs: `Experiencing or observing ${lowerDef} in a real situation.`
+      };
+    } else if (pos === 'adjective') {
+      return {
+        simple: `${capWord} describes someone or something that is ${lowerDef}.`,
+        thinkOfItAs: `Spotting someone or something displaying ${lowerDef} in action.`
+      };
+    }
+
+    return {
+      simple: `In plain English, "${word}" means ${lowerDef}.`,
+      thinkOfItAs: `Noticing ${lowerDef} happening in real life.`
+    };
   }
 };
