@@ -767,7 +767,21 @@ export const dictionaryService = {
       return existingApiExamples.slice(0, 3);
     }
 
-    // Dynamic Natural Sentence Construction based on Part of Speech
+    // Domain-aware and Part-of-Speech Natural Sentence Fallback Generator
+    if (clean === 'gourmand') {
+      return [
+        { context: 'Everyday', sentence: 'My uncle is a true gourmand who visits a new gourmet restaurant every weekend.' },
+        { context: 'Work', sentence: 'The food critic and self-described gourmand gave a stellar review to the new tasting menu.' },
+        { context: 'Academic', sentence: 'Culinary historians study how European gourmands influenced modern fine dining traditions.' }
+      ];
+    } else if (clean === 'parsimonious') {
+      return [
+        { context: 'Everyday', sentence: 'My parsimonious roommate checks every receipt and reuses paper bags to save pennies.' },
+        { context: 'Work', sentence: 'The director maintained a parsimonious budget policy, requiring approval for every small expense.' },
+        { context: 'Academic', sentence: 'Economists analyzed how parsimonious household spending impacts post-recession retail growth.' }
+      ];
+    }
+
     if (pos === 'adverb') {
       return [
         { context: 'Everyday', sentence: `She ${clean} checks her phone during dinner because she expects an urgent call.` },
@@ -776,21 +790,21 @@ export const dictionaryService = {
       ];
     } else if (pos === 'adjective') {
       return [
-        { context: 'Everyday', sentence: `He was ${clean} during the discussion, making sure everyone felt heard.` },
+        { context: 'Everyday', sentence: `His ${clean} approach to problem-solving helped resolve the issue quickly.` },
         { context: 'Work', sentence: `The manager gave a ${clean} presentation that convinced the executive team.` },
-        { context: 'Conversation', sentence: `That was a very ${clean} answer to a tricky question.` }
+        { context: 'Academic', sentence: `Researchers presented a ${clean} model to explain the unexpected findings.` }
       ];
     } else if (pos === 'verb') {
       return [
-        { context: 'Everyday', sentence: `She decided to ${clean} her thoughts out loud so her friend understood.` },
-        { context: 'Work', sentence: `The director asked the team to ${clean} their goals for the project.` },
-        { context: 'Conversation', sentence: `You should ${clean} your ideas clearly during the meeting tomorrow.` }
+        { context: 'Everyday', sentence: `She decided to ${clean} her plans clearly so everyone understood.` },
+        { context: 'Work', sentence: `The director asked the team to ${clean} their quarterly goals during the review.` },
+        { context: 'Academic', sentence: `Scientists hope to ${clean} new data during the upcoming clinical trial.` }
       ];
     } else if (pos === 'noun') {
       return [
-        { context: 'Everyday', sentence: `He took the stairs to the top floor because his ${clean} makes him panic in small elevators.` },
-        { context: 'Work', sentence: `The team made office adjustments to avoid triggering issues related to ${clean}.` },
-        { context: 'Academic', sentence: `Researchers published a new study analyzing how specialized therapy reduces ${clean}.` }
+        { context: 'Everyday', sentence: `Her passion for ${clean} was obvious to everyone who spent time with her.` },
+        { context: 'Work', sentence: `The executive team discussed strategies to manage challenges related to ${clean}.` },
+        { context: 'Academic', sentence: `Scholars published a comprehensive paper analyzing the broader effects of ${clean}.` }
       ];
     }
 
@@ -800,7 +814,7 @@ export const dictionaryService = {
     ];
   },
 
-  // PURE SIMPLE ENGLISH ENGINE — NO DICTIONARY JARGON RE-USED
+  // PURE SIMPLE ENGLISH ENGINE — NO DICTIONARY JARGON OR SELF-REFERENTIAL RE-USE
   generatePureSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
     if (!def) return '';
 
@@ -825,13 +839,28 @@ export const dictionaryService = {
       return 'Eloquent describes speech or writing that is clear, expressive, and powerful enough to move an audience.';
     } else if (cleanWord === 'pragmatic') {
       return 'Pragmatic describes a mindset focused on real solutions that actually work, rather than ideal rules.';
+    } else if (cleanWord === 'gourmand') {
+      return 'A gourmand is a person who deeply loves eating good food and truly enjoys rich, delicious meals.';
+    } else if (cleanWord === 'parsimonious') {
+      return 'Parsimonious describes someone who is extremely unwilling to spend money, use resources, or share.';
     }
 
     let cleanDef = def
       .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being)\s+/i, '')
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being|Exhibiting)\s+/i, '')
       .replace(/;\s*also\s*:.*$/i, '')
       .replace(/[\.\s]+$/, '');
+
+    // Strip self-referential terms (e.g., parsimonious -> parsimony)
+    if (cleanWord.startsWith('parsimon') && cleanDef.toLowerCase().includes('parsimony')) {
+      cleanDef = cleanDef.replace(/exhibiting parsimony;?\s*/i, '').replace(/parsimony;?\s*/i, '');
+      if (!cleanDef) cleanDef = 'extremely unwilling to spend money or share resources';
+    } else if (cleanDef.includes(';')) {
+      const clauses = cleanDef.split(';').map(c => c.trim()).filter(Boolean);
+      const rootPrefix = cleanWord.length > 4 ? cleanWord.slice(0, 4) : cleanWord;
+      const nonCircular = clauses.find(c => !c.toLowerCase().includes(rootPrefix));
+      if (nonCircular) cleanDef = nonCircular;
+    }
 
     Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
       const regex = new RegExp(`\\b${key}\\b`, 'gi');
@@ -850,9 +879,9 @@ export const dictionaryService = {
       }
       return `${capitalizeWord} describes someone or something that is ${cleanDef}.`;
     } else if (pos === 'verb') {
-      return `To ${word} means to ${cleanDef}. It describes taking action to perform this directly.`;
+      return `To ${word} means to ${cleanDef}. It describes taking action directly.`;
     } else if (pos === 'noun') {
-      return `${capitalizeWord} refers to ${cleanDef}. It describes a real-life state, feeling, or condition.`;
+      return `${capitalizeWord} refers to ${cleanDef}. It describes a real-life state, person, or condition.`;
     }
 
     return `${capitalizeWord} refers to ${cleanDef}.`;
@@ -882,6 +911,10 @@ export const dictionaryService = {
       return 'Think of a speaker commanding a quiet auditorium where everyone pauses to listen because every word lands perfectly.';
     } else if (cleanWord === 'pragmatic') {
       return 'Think of choosing comfortable walking shoes for a long trek instead of stylish ones that hurt — prioritizing real results over appearance.';
+    } else if (cleanWord === 'gourmand') {
+      return 'Imagining your friend at a big party trying a portion of every single delicious dish on the table and asking for seconds.';
+    } else if (cleanWord === 'parsimonious') {
+      return 'Watching someone carefully split a restaurant bill down to the exact penny to avoid paying an extra dime.';
     }
 
     // 1. Time / Frequency / Duration
@@ -916,9 +949,19 @@ export const dictionaryService = {
 
     let cleanDef = def
       .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is|An abnormal fear of|A fear of)\s+/i, '')
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is|An abnormal fear of|A fear of|Exhibiting)\s+/i, '')
       .replace(/[\.\s]+$/, '')
       .toLowerCase();
+
+    // Strip self-referential terms
+    if (cleanWord.startsWith('parsimon') && cleanDef.includes('parsimony')) {
+      cleanDef = 'being extremely unwilling to spend money or share resources';
+    } else if (cleanDef.includes(';')) {
+      const clauses = cleanDef.split(';').map(c => c.trim()).filter(Boolean);
+      const rootPrefix = cleanWord.length > 4 ? cleanWord.slice(0, 4) : cleanWord;
+      const nonCircular = clauses.find(c => !c.includes(rootPrefix));
+      if (nonCircular) cleanDef = nonCircular;
+    }
 
     Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
       const regex = new RegExp(`\\b${key}\\b`, 'gi');
@@ -928,12 +971,12 @@ export const dictionaryService = {
     if (pos === 'adverb') {
       return `Performing an action ${cleanDef} in a real situation.`;
     } else if (pos === 'adjective') {
-      return `Seeing someone or something exhibiting ${cleanDef} in action.`;
+      return `Watching someone or something displaying ${cleanDef} in action.`;
     } else if (pos === 'verb') {
       return `Taking a deliberate step to ${cleanDef} when it counts.`;
     }
 
-    return `Experiencing or observing ${cleanDef} in real life.`;
+    return `Observing ${cleanDef} in real life.`;
   },
 
   generateWhenToUse(word: string, pos: string, synonyms: string[]): string[] {
