@@ -8,6 +8,7 @@ import { ShareButton } from '../common/ShareButton';
 import { CopyButton } from '../common/CopyButton';
 import { CheckCircle2, XCircle, ArrowRight, Lightbulb, Layers, Sparkles, RefreshCw } from 'lucide-react';
 import { aiService } from '../../services/aiService';
+import { dictionaryService } from '../../services/dictionaryService';
 
 interface WordDetailsViewProps {
   wordEntry: WordEntry;
@@ -49,6 +50,11 @@ export const WordDetailsView: React.FC<WordDetailsViewProps> = ({
       );
       setCustomSimple(res.simple);
       setCustomThinkOfItAs(res.thinkOfItAs);
+      if (wordEntry.definitions && wordEntry.definitions[0]) {
+        wordEntry.definitions[0].simple = res.simple;
+        wordEntry.definitions[0].thinkOfItAs = res.thinkOfItAs;
+        dictionaryService.cacheWord(wordEntry.word.toLowerCase(), wordEntry);
+      }
       onShowToast('Generated new AI layman explanation!');
     } catch (e) {
       onShowToast('Failed to generate new explanation');

@@ -17,6 +17,7 @@ const DEFAULT_SETTINGS: UserSettings = {
 export const storageService = {
   get<T>(key: string, fallback: T): T {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return fallback;
       const item = localStorage.getItem(key);
       return item ? JSON.parse(item) : fallback;
     } catch (e) {
@@ -27,6 +28,7 @@ export const storageService = {
 
   set<T>(key: string, value: T): void {
     try {
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') return;
       localStorage.setItem(key, JSON.stringify(value));
     } catch (e) {
       console.warn(`Error saving ${key} to storage`, e);

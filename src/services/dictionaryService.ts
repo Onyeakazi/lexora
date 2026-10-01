@@ -58,146 +58,14 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
-export const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
-  'discordant': 'harsh and clashing',
-  'dissonance': 'harsh, clashing sounds',
-  'dissonant': 'harsh and clashing',
-  'cacophonous': 'noisy and harsh',
-  'cacophony': 'loud, harsh clash of noises',
-  'acoustics': 'sound quality',
-  'acoustic': 'sound',
-  'clamor': 'loud, confusing noise',
-  'strident': 'harsh and grating',
-  'incongruous': 'out of place',
-  'incongruity': 'not fitting in',
-  'phenomenon': 'event or occurrence',
-  'unplanned': 'accidental',
-  'unintended': 'not planned',
-  'unsought': 'unexpected',
-  'insightful': 'clever and perceptive',
-  'recognition': 'noticing',
-  'circumstance': 'situation',
-  'circumstances': 'situations',
-  'chivalric': 'old-fashioned hero-like',
-  'idealistic': 'dreamy and unrealistic',
-  'impractical': 'not realistic',
-  'deliberately': 'on purpose',
-  'malicious': 'mean-spirited',
-  'misfortune': 'bad luck or trouble',
-  'counterempathy': 'lack of sympathy',
-  'superfluous': 'extra and unnecessary',
-  'anachronistic': 'out of place in time',
-  'proclivity': 'strong habit',
-  'propensity': 'natural tendency',
-  'predisposition': 'tendency',
-  'aberration': 'unusual difference',
-  'anomalous': 'unusual',
-  'anomaly': 'rare exception',
-  'pernicious': 'very harmful',
-  'esoteric': 'known to only a few people',
-  'lucid': 'clear and easy to understand',
-  'taciturn': 'quiet and rarely speaking',
-  'loquacious': 'very talkative',
-  'voracious': 'huge and greedy',
-  'ameliorate': 'make better',
-  'mitigate': 'lessen the harm of',
-  'alleviate': 'ease or relieve',
-  'exacerbate': 'make much worse',
-  'belligerent': 'hostile and ready to fight',
-  'pugnacious': 'eager to fight',
-  'benevolent': 'kind and caring',
-  'malevolent': 'mean and hateful',
-  'magnanimous': 'very generous and forgiving',
-  'ostentatious': 'flashy and showing off',
-  'precocious': 'advanced at a very young age',
-  'recalcitrant': 'stubbornly refusing to obey',
-  'epiphany': 'sudden "aha!" moment',
-  'zenith': 'highest peak',
-  'nadir': 'lowest point',
-  'myriad': 'countless number of',
-  'plethora': 'huge overload of',
-  'scarcity': 'shortage',
-  'frugal': 'careful with money',
-  'affluent': 'wealthy',
-  'indigent': 'very poor',
-  'destitute': 'having nothing',
-  'transient': 'lasting for only a short time',
-  'immutable': 'unchangeable',
-  'malleable': 'easy to bend or shape',
-  'tenacious': 'never giving up',
-  'audacious': 'bold and daring',
-  'trepidation': 'nervous fear',
-  'apprehension': 'worry about what is coming',
-  'indolent': 'lazy',
-  'lethargic': 'sluggish and lacking energy',
-  'vivacious': 'cheerful and lively',
-  'euphoric': 'overjoyed',
-  'morose': 'gloomy and grumpy',
-  'sycophant': 'flatterer or kiss-up',
-  'infrequently': 'not very often',
-  'rarely': 'almost never',
-  'frequently': 'very often or regularly',
-  'evanescent': 'quick to vanish',
-  'transitory': 'lasting for only a brief period',
-  'omnipresent': 'seen or found everywhere',
-  'resilient': 'able to bounce back quickly',
-  'reluctant': 'unwilling or hesitant',
-  'versatile': 'flexible and good at many things',
-  'inevitable': 'certain to happen no matter what',
-  'articulate': 'clear and easy to understand',
-  'hypothetical': 'imagined rather than real',
-  'supposition': 'an educated guess',
-  'conjecture': 'an opinion formed without full proof',
-  'meticulous': 'extremely careful with small details',
-  'diligent': 'hardworking and persistent',
-  'eloquent': 'persuasive and moving in speech',
-  'pragmatic': 'focused on practical results',
-  'scrutiny': 'close and critical inspection',
-  'withstand': 'stay strong through',
-  'adversity': 'hard times or difficulty',
-  'difficult conditions': 'hard situations',
-  'pertaining to': 'about',
-  'relating to': 'about',
-  'characterized by': 'known for',
-  'having the nature of': 'being like',
-  'state of being': 'feeling of being',
-  'used to describe': 'means',
-  'in a manner that is': 'in a way that is',
-  'precision': 'exactness',
-  'fluency': 'smoothness',
-  'hesitant': 'not sure',
-  'adaptable': 'able to change easily',
-  'unavoidable': 'cannot be stopped',
-  'inspection': 'checking',
-  'temporary': 'short-lived',
-  'duration': 'length of time',
-  'extent': 'how much',
-  'manifest': 'show clearly',
-  'convey': 'share',
-  'utilize': 'use',
-  'employ': 'use',
-  'facilitate': 'make easier',
-  'commence': 'start',
-  'terminate': 'end',
-  'subsequent': 'later',
-  'prior to': 'before',
-  'magnitude': 'size',
-  'endeavor': 'try hard',
-  'persevere': 'keep going',
-  'paramount': 'top priority',
-  'predominant': 'main'
-};
+import {
+  FORMAL_TO_SIMPLE_MAP,
+  simplifyFormalEnglish,
+  isVerbatimDuplicate,
+  cleanDictionaryDefinition
+} from '../utils/simplificationEngine';
 
-export function simplifyFormalEnglish(text: string): string {
-  if (!text) return '';
-  let result = text;
-  const sortedKeys = Object.keys(FORMAL_TO_SIMPLE_MAP).sort((a, b) => b.length - a.length);
-  for (const key of sortedKeys) {
-    const regex = new RegExp(`\\b${key}\\b`, 'gi');
-    result = result.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
-  }
-  return result;
-}
+export { FORMAL_TO_SIMPLE_MAP, simplifyFormalEnglish };
 
 const SYNONYM_DETAILS_MAP: Record<string, { simpleDefinition: string; distinction: string }> = {
   'offensive': {
@@ -319,11 +187,21 @@ export const dictionaryService = {
     const simple = (entry.definitions[0]?.simple || '').trim().toLowerCase();
     const thinkOfItAs = (entry.definitions[0]?.thinkOfItAs || '').trim().toLowerCase();
 
-    return (
+    // Check placeholder fallbacks
+    if (
       def.startsWith('an english vocabulary term referring to') ||
       simple.includes('refers to a specific concept or object in plain english') ||
       thinkOfItAs.startsWith('picture a clear real-life scenario representing')
-    );
+    ) {
+      return true;
+    }
+
+    // Check verbatim duplicate: if simple is just a lazy copy/prepend of the dictionary definition
+    if (isVerbatimDuplicate(simple, def)) {
+      return true;
+    }
+
+    return false;
   },
 
   purgeCorruptedCache(): void {
@@ -458,6 +336,7 @@ export const dictionaryService = {
       let enriched = await this.enrichSynonymsIfNeeded(local);
       if (aiService.isAIEnabled()) {
         enriched = await aiService.enrichWordEntryWithAI(enriched);
+        this.cacheWord(cleanTerm, enriched);
       }
       return enriched;
     }
@@ -1136,45 +1015,43 @@ export const dictionaryService = {
       return 'Defenestration is the act of throwing someone or something out of a window.';
     }
 
-    let cleanDef = def
-      .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being|Exhibiting|A state of|The phenomenon of|The condition of)\s+/i, '')
-      .replace(/;\s*also\s*:.*$/i, '')
-      .replace(/[\.\s]+$/, '');
+    let cleanDef = cleanDictionaryDefinition(def, word);
 
     // Strip self-referential terms (e.g., parsimonious -> parsimony)
     if (cleanWord.startsWith('parsimon') && cleanDef.toLowerCase().includes('parsimony')) {
-      cleanDef = cleanDef.replace(/exhibiting parsimony;?\s*/i, '').replace(/parsimony;?\s*/i, '');
-      if (!cleanDef) cleanDef = 'extremely unwilling to spend money or share resources';
-    } else if (cleanDef.includes(';')) {
-      const clauses = cleanDef.split(';').map(c => c.trim()).filter(Boolean);
-      const rootPrefix = cleanWord.length > 4 ? cleanWord.slice(0, 4) : cleanWord;
-      const nonCircular = clauses.find(c => !c.toLowerCase().includes(rootPrefix));
-      if (nonCircular) cleanDef = nonCircular;
+      cleanDef = 'extremely unwilling to spend money, use resources, or share';
     }
 
-    cleanDef = simplifyFormalEnglish(cleanDef);
-
-    cleanDef = cleanDef.charAt(0).toLowerCase() + cleanDef.slice(1);
+    let simplified = simplifyFormalEnglish(cleanDef);
+    simplified = simplified.charAt(0).toLowerCase() + simplified.slice(1);
     const capitalizeWord = word.charAt(0).toUpperCase() + word.slice(1);
 
     if (pos === 'adverb') {
-      const stripped = cleanDef.replace(/^(in a|in an)\s+/i, '').replace(/\s+(manner|way)$/i, '');
-      return `Doing something ${word} means doing it ${stripped}.`;
+      const stripped = simplified.replace(/^(in a|in an)\s+/i, '').replace(/\s+(manner|way)$/i, '');
+      return `Doing something ${word} means doing it ${stripped}. In plain words, it describes how an action is carried out.`;
     } else if (pos === 'adjective') {
-      const stripped = cleanDef.replace(/^(being|having|characterized by|marked by)\s+/i, '');
-      return `When something is ${word}, it is ${stripped}.`;
+      const stripped = simplified.replace(/^(being|having|characterized by|marked by|known for)\s+/i, '');
+      return `When someone or something is ${word}, it means they are ${stripped}.`;
     } else if (pos === 'verb') {
-      const stripped = cleanDef.replace(/^to\s+/i, '');
+      const stripped = simplified.replace(/^to\s+/i, '');
       return `To ${word} means to ${stripped}.`;
     } else if (pos === 'noun') {
-      if (cleanDef.startsWith('a ') || cleanDef.startsWith('an ') || cleanDef.startsWith('the ')) {
-        return `${capitalizeWord} is ${cleanDef}.`;
+      if (simplified.startsWith('the skill of ') || simplified.startsWith('the process of ') || simplified.startsWith('the feeling of ')) {
+        return `${capitalizeWord} is ${simplified}. In everyday life, it is all about how this is practiced or experienced.`;
       }
-      return `${capitalizeWord} means ${cleanDef}.`;
+      if (simplified.startsWith('someone who ') || simplified.startsWith('a person who ')) {
+        return `A ${word} is ${simplified.replace(/^a person who /i, 'someone who ')}.`;
+      }
+      if (simplified.startsWith('a tool used to ') || simplified.startsWith('a device used to ')) {
+        return `A ${word} is ${simplified}.`;
+      }
+      if (simplified.startsWith('a ') || simplified.startsWith('an ') || simplified.startsWith('the ')) {
+        return `In simple English, ${word} is ${simplified}.`;
+      }
+      return `${capitalizeWord} refers to ${simplified}.`;
     }
 
-    return `${capitalizeWord} means ${cleanDef}.`;
+    return `${capitalizeWord} means ${simplified}.`;
   },
 
   // PURE VIVID MENTAL IMAGE ENGINE — ZERO DICTIONARY REUSE
@@ -1217,68 +1094,58 @@ export const dictionaryService = {
       return 'Hiding a secret smile when a smug rival who boasted all week trips over their own shoelace.';
     }
 
-    // 1. Sound / Noise
+    // 1. Persuasion / Debate / Rhetoric / Influence
+    if (lowerDef.includes('persuad') || lowerDef.includes('influence') || lowerDef.includes('rhetoric') || lowerDef.includes('debate') || lowerDef.includes('convince') || lowerDef.includes('argument')) {
+      return `Picture a speaker choosing their words so cleverly that a room full of doubtful listeners nods in agreement.`;
+    }
+
+    // 2. Sound / Noise
     if (lowerDef.includes('sound') || lowerDef.includes('noise') || lowerDef.includes('voice') || lowerDef.includes('music') || lowerDef.includes('loud') || lowerDef.includes('clash') || lowerDef.includes('tone') || lowerDef.includes('dissonan') || lowerDef.includes('discord')) {
       return `Picture standing in a room where loud, clashing noises overpower everything else and you have to cover your ears.`;
     }
 
-    // 2. Time / Frequency / Duration
+    // 3. Time / Frequency / Duration
     if (lowerDef.includes('time') || lowerDef.includes('short') || lowerDef.includes('long') || lowerDef.includes('brief') || lowerDef.includes('often') || lowerDef.includes('rare') || lowerDef.includes('infrequent')) {
       return `A quick flash of lightning on a dark night — here for a split second, then gone before you can blink.`;
     }
 
-    // 3. Care / Precision / Detail
+    // 4. Care / Precision / Detail
     if (lowerDef.includes('detail') || lowerDef.includes('careful') || lowerDef.includes('precise') || lowerDef.includes('thorough') || lowerDef.includes('attention')) {
       return `Inspecting every seam of a jacket under a bright magnifying lamp to make sure not a single loose thread is left.`;
     }
 
-    // 4. Speech / Communication
+    // 5. Speech / Communication
     if (lowerDef.includes('speech') || lowerDef.includes('talk') || lowerDef.includes('speak') || lowerDef.includes('word') || lowerDef.includes('express') || lowerDef.includes('voice')) {
       return `Telling a story so vividly around a campfire that everyone stops chatting and leans in to hear every word.`;
     }
 
-    // 5. Strength / Resistance / Flexibility
+    // 6. Strength / Resistance / Flexibility
     if (lowerDef.includes('strong') || lowerDef.includes('power') || lowerDef.includes('tough') || lowerDef.includes('recover') || lowerDef.includes('difficult')) {
       return `A sturdy palm tree bending almost flat against hurricane winds, then standing right back up once the storm clears.`;
     }
 
-    // 6. Mind / Thought / Ideas
+    // 7. Mind / Thought / Ideas
     if (lowerDef.includes('mind') || lowerDef.includes('idea') || lowerDef.includes('thought') || lowerDef.includes('reason') || lowerDef.includes('logic') || lowerDef.includes('believe')) {
       return `Connecting the final two pieces of a difficult puzzle and suddenly seeing the whole picture come together.`;
     }
 
-    // 7. Generosity / Emotion / Heart
+    // 8. Generosity / Emotion / Heart
     if (lowerDef.includes('kind') || lowerDef.includes('give') || lowerDef.includes('generous') || lowerDef.includes('feeling') || lowerDef.includes('love') || lowerDef.includes('help')) {
       return `Holding an elevator door for someone running late with armfuls of groceries without them having to ask.`;
     }
 
-    let cleanDef = def
-      .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|In a manner that is|An abnormal fear of|A fear of|Exhibiting)\s+/i, '')
-      .replace(/[\.\s]+$/, '')
-      .toLowerCase();
+    const cleanDef = cleanDictionaryDefinition(def, word).toLowerCase();
+    const simplified = simplifyFormalEnglish(cleanDef);
 
-    // Strip self-referential terms
-    if (cleanWord.startsWith('parsimon') && cleanDef.includes('parsimony')) {
-      cleanDef = 'being extremely unwilling to spend money or share resources';
-    } else if (cleanDef.includes(';')) {
-      const clauses = cleanDef.split(';').map(c => c.trim()).filter(Boolean);
-      const rootPrefix = cleanWord.length > 4 ? cleanWord.slice(0, 4) : cleanWord;
-      const nonCircular = clauses.find(c => !c.includes(rootPrefix));
-      if (nonCircular) cleanDef = nonCircular;
-    }
-
-    cleanDef = simplifyFormalEnglish(cleanDef);
-
-    if (pos === 'adverb') {
-      return `Picture someone handling a situation where they act ${cleanDef}.`;
+    if (pos === 'verb') {
+      return `Imagine taking a deliberate step to ${simplified.replace(/^to\s+/i, '')} right when it counts most.`;
     } else if (pos === 'adjective') {
-      return `Imagine walking into a room and discovering something that is completely ${cleanDef}.`;
-    } else if (pos === 'verb') {
-      return `Imagine taking a deliberate step to ${cleanDef} right when it counts most.`;
+      return `Imagine walking into a room and discovering something that is completely ${simplified.replace(/^(being|having|known for)\s+/i, '')}.`;
+    } else if (pos === 'adverb') {
+      return `Picture someone handling a tricky situation where they act ${simplified.replace(/^(in a|in an)\s+/i, '').replace(/\s+(manner|way)$/i, '')}.`;
     }
 
-    return `Picture a real-life moment when you experience ${cleanDef} firsthand.`;
+    return `Imagine a real-life situation where ${simplified} comes into play and everyone notices.`;
   },
 
   generateWhenToUse(word: string, pos: string, synonyms: string[]): string[] {

@@ -1,4 +1,5 @@
 import { WordEntry } from '../models/word';
+import { simplifyFormalEnglish, cleanDictionaryDefinition } from '../utils/simplificationEngine';
 
 interface GeminiResponsePart {
   text?: string;
@@ -44,6 +45,48 @@ export const aiService = {
     return this.getApiKey().length > 0;
   },
 
+  async callGeminiApi(prompt: string, temperature: number = 0.7, maxTokens: number = 3000): Promise<string | null> {
+    const apiKey = this.getApiKey();
+    if (!apiKey) return null;
+
+    // Use models available on current Gemini API key, ordered by availability and reliability
+    const candidateModels = ['gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-2.5-flash'];
+
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature,
+                maxOutputTokens: maxTokens
+              }
+            })
+          }
+        );
+
+        if (response.ok) {
+          const data: GeminiApiResponse = await response.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (rawText) {
+            return rawText;
+          }
+        } else if (response.status === 429 || response.status === 404 || response.status === 503) {
+          console.warn(`Gemini model ${model} status ${response.status}, trying fallback...`);
+          continue;
+        }
+      } catch (err) {
+        console.warn(`Gemini model ${model} fetch failed:`, err);
+      }
+    }
+
+    return null;
+  },
+
   // 1. Full Word Entry AI Enrichment (Used automatically when searching any word across Lexora)
   async enrichWordEntryWithAI(entry: WordEntry): Promise<WordEntry> {
     const apiKey = this.getApiKey();
@@ -56,31 +99,34 @@ export const aiService = {
       : '';
 
     try {
-      const prompt = `You are the master ELI5 AI lexicographer for Lexora dictionary.
+      const prompt = `You are an expert 5th-grade ELI5 educator and master lexicographer for the Lexora dictionary app.
 Word: "${entry.word}"
 Part of Speech: "${pos}"
-Original Definition: "${primaryDef}"
+Original Dictionary Definition: "${primaryDef}"
 ${synList ? `Target Synonyms to Explain: ${synList}` : ''}
 
-Task: Generate a rich, natural 5th-grade ELI5 plain English breakdown for "${entry.word}" and its synonyms.
-CRITICAL RULES FOR DEFINITION & EXAMPLES:
-0. "dictionaryDefinition": Write an accurate, standard, formal 1-sentence dictionary definition of "${entry.word}".
-1. "simple": Write a direct, conversational 5th-grade ELI5 explanation of what "${entry.word}" means and does in real life. NEVER explain a word using its root word or self-referential term (e.g. NEVER use 'parsimony' when explaining 'parsimonious', NEVER use '${entry.word}' in its own definition). Use plain, clear English (e.g. 'extremely unwilling to spend money, use resources, or share'). DO NOT use meta templates like 'At its heart' or 'Think of X as'.
-2. "thinkOfItAs": Write an ACTIVE real-life action phrase or vivid scenario describing what experiencing or doing this feels like (e.g., 'Watching someone carefully split a dinner bill down to the exact penny to avoid paying an extra dime'). Start with an active verb or vivid action phrase!
-3. "commonUseExample": Write a practical situational scenario or quoted dialogue showing how people actually use or experience the word (e.g., '\'I can\'t take the elevator, let\'s use the stairs.\' — Someone managing claustrophobia in a building.').
-4. "examples": Provide 3 PRACTICAL, REAL-WORLD context sentences (Everyday, Work, Academic). Show real people in real situations. DO NOT write generic templates like 'He took the stairs because...' or 'Understanding the concept of...'.
+Task: Generate a rich, natural 5th-grade ELI5 plain English breakdown for "${entry.word}".
+CRITICAL RULES FOR "simple" & "thinkOfItAs":
+1. "simple": Write a 1-2 sentence plain English breakdown of what "${entry.word}" means in real life.
+   - DO NOT copy, quote, or mirror the original dictionary wording.
+   - Use simple words a 10-year-old child easily understands.
+   - Break down complex terms into practical concepts (e.g. for "rhetoric", explain that it is the skill of picking words cleverly to convince people to agree with you).
+   - NEVER use the word "${entry.word}" in its own explanation.
+2. "thinkOfItAs": Write an ACTIVE, VIVID real-world scene or analogy starting with "Picture..." or "Imagine...".
+3. "commonUseExample": Write a practical situational scenario or quote showing how people actually use the word in real life.
+4. "examples": Provide 3 PRACTICAL, REAL-WORLD context sentences (Everyday, Work, Academic).
 
 CRITICAL RULES FOR SYNONYMS:
 - Provide 3 to 5 relevant synonyms.
 - For EACH synonym:
   - "simpleDefinition": Write a short 1-sentence 5th-grade ELI5 explanation of what that synonym means without self-referential terms.
-  - "distinction": Write a VERY SHORT, SIMPLE 5-10 word note directly connecting it to "${entry.word}" (e.g. 'More scary and creepy than ${entry.word}', 'Focuses on hurting feelings, unlike ${entry.word}', or 'Broader than ${entry.word}').
+  - "distinction": Write a VERY SHORT, SIMPLE 5-10 word note directly connecting it to "${entry.word}".
 
 Return ONLY valid JSON in this exact structure without markdown backticks:
 {
   "dictionaryDefinition": "Formal standard dictionary definition",
-  "simple": "A clear, non-self-referential 5th-grade ELI5 explanation",
-  "thinkOfItAs": "An active visual picture or action phrase",
+  "simple": "A clear, non-self-referential 5th-grade ELI5 explanation that breaks down the concept into everyday words",
+  "thinkOfItAs": "An active visual picture or action phrase starting with Picture or Imagine",
   "commonUseExample": "An authentic situational sentence or quote",
   "examples": [
     { "context": "Everyday", "sentence": "Practical real-life sentence showing real people in action." },
@@ -99,56 +145,38 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
   ]
 }`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 3500
-            }
-          })
+      const rawText = await this.callGeminiApi(prompt, 0.7, 3000);
+      if (rawText) {
+        const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const parsed: AIErichedWordDetails & { dictionaryDefinition?: string; examples?: WordEntry['examples'] } = JSON.parse(cleanedText);
+
+        if (parsed.dictionaryDefinition && (!entry.definitions[0]?.dictionary || entry.definitions[0].dictionary.startsWith('An English vocabulary term referring to'))) {
+          entry.definitions[0] = {
+            ...entry.definitions[0],
+            dictionary: parsed.dictionaryDefinition
+          };
         }
-      );
 
-      if (response.ok) {
-        const data: GeminiApiResponse = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (rawText) {
-          const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-          const parsed: AIErichedWordDetails & { dictionaryDefinition?: string; examples?: WordEntry['examples'] } = JSON.parse(cleanedText);
-
-          if (parsed.dictionaryDefinition && (!entry.definitions[0]?.dictionary || entry.definitions[0].dictionary.startsWith('An English vocabulary term referring to'))) {
-            entry.definitions[0] = {
-              ...entry.definitions[0],
-              dictionary: parsed.dictionaryDefinition
-            };
-          }
-
-          if (parsed.simple) {
-            entry.definitions[0] = {
-              ...entry.definitions[0],
-              simple: parsed.simple,
-              thinkOfItAs: parsed.thinkOfItAs || entry.definitions[0]?.thinkOfItAs
-            };
-          }
-          if (parsed.commonUseExample) entry.commonUseExample = parsed.commonUseExample;
-          if (parsed.examples && Array.isArray(parsed.examples) && parsed.examples.length > 0) {
-            entry.examples = parsed.examples;
-          }
-          if (parsed.whenToUse && parsed.whenToUse.length > 0) entry.whenToUse = parsed.whenToUse;
-          if (parsed.whenNotToUse && parsed.whenNotToUse.length > 0) entry.whenNotToUse = parsed.whenNotToUse;
-          if (parsed.memoryTip) entry.memoryTip = parsed.memoryTip;
-          if (parsed.synonyms && Array.isArray(parsed.synonyms) && parsed.synonyms.length > 0) {
-            entry.synonyms = parsed.synonyms.map(syn => ({
-              word: syn.word,
-              simpleDefinition: syn.simpleDefinition,
-              distinction: syn.distinction
-            }));
-          }
+        if (parsed.simple) {
+          entry.definitions[0] = {
+            ...entry.definitions[0],
+            simple: parsed.simple,
+            thinkOfItAs: parsed.thinkOfItAs || entry.definitions[0]?.thinkOfItAs
+          };
+        }
+        if (parsed.commonUseExample) entry.commonUseExample = parsed.commonUseExample;
+        if (parsed.examples && Array.isArray(parsed.examples) && parsed.examples.length > 0) {
+          entry.examples = parsed.examples;
+        }
+        if (parsed.whenToUse && parsed.whenToUse.length > 0) entry.whenToUse = parsed.whenToUse;
+        if (parsed.whenNotToUse && parsed.whenNotToUse.length > 0) entry.whenNotToUse = parsed.whenNotToUse;
+        if (parsed.memoryTip) entry.memoryTip = parsed.memoryTip;
+        if (parsed.synonyms && Array.isArray(parsed.synonyms) && parsed.synonyms.length > 0) {
+          entry.synonyms = parsed.synonyms.map(syn => ({
+            word: syn.word,
+            simpleDefinition: syn.simpleDefinition,
+            distinction: syn.distinction
+          }));
         }
       }
     } catch (err) {
@@ -172,8 +200,8 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
 {
   "partOfSpeech": ["noun"],
   "dictionaryDefinition": "Formal authoritative 1-sentence dictionary definition of ${cleanWord}.",
-  "simple": "A clear, 5th-grade plain English explanation of what it means without self-referential definitions or jargon.",
-  "thinkOfItAs": "A vivid real-life action phrase or scenario representing ${cleanWord}.",
+  "simple": "A clear, 5th-grade plain English explanation of what it means in real life. DO NOT copy the dictionary definition.",
+  "thinkOfItAs": "A vivid real-life action phrase starting with Picture or Imagine representing ${cleanWord}.",
   "ipa": "/ˈ${cleanWord}/",
   "phonetic": "phonetic respelling",
   "usageExplanation": "\"${cleanWord}\" functions as a ...",
@@ -195,74 +223,56 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
   ]
 }`;
 
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.6,
-              maxOutputTokens: 3500
+      const rawText = await this.callGeminiApi(prompt, 0.6, 3000);
+      if (rawText) {
+        const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const parsed = JSON.parse(cleanedText);
+
+        const posList = (parsed.partOfSpeech || ['noun']).map((p: string) => p.toLowerCase());
+        const primaryDef = parsed.dictionaryDefinition || `Definition of ${cleanWord}.`;
+
+        return {
+          id: cleanWord,
+          word: cleanWord,
+          partOfSpeech: posList,
+          definitions: [
+            {
+              dictionary: primaryDef,
+              simple: parsed.simple || `${cleanWord} in plain terms.`,
+              thinkOfItAs: parsed.thinkOfItAs || `Picture ${cleanWord} in real life.`
             }
-          })
-        }
-      );
-
-      if (response.ok) {
-        const data: GeminiApiResponse = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (rawText) {
-          const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-          const parsed = JSON.parse(cleanedText);
-
-          const posList = (parsed.partOfSpeech || ['noun']).map((p: string) => p.toLowerCase());
-          const primaryDef = parsed.dictionaryDefinition || `Definition of ${cleanWord}.`;
-
-          return {
-            id: cleanWord,
-            word: cleanWord,
-            partOfSpeech: posList,
-            definitions: [
-              {
-                dictionary: primaryDef,
-                simple: parsed.simple || `${cleanWord} in plain terms.`,
-                thinkOfItAs: parsed.thinkOfItAs || `Picture ${cleanWord} in real life.`
-              }
-            ],
-            pronunciation: {
-              british: { ipa: parsed.ipa || `/ˈ${cleanWord}/`, phonetic: parsed.phonetic || cleanWord },
-              american: { ipa: parsed.ipa || `/ˈ${cleanWord}/`, phonetic: parsed.phonetic || cleanWord }
-            },
-            usage: {
-              isVerb: posList.includes('verb'),
-              explanation: parsed.usageExplanation || `"${cleanWord}" is used as a ${posList.join('/')}.`
-            },
-            examples: parsed.examples || [
-              { context: 'Everyday', sentence: `She used the word "${cleanWord}" in a normal conversation.` },
-              { context: 'Work', sentence: `The team applied "${cleanWord}" to their current project.` },
-              { context: 'Academic', sentence: `Scholars have analyzed the significance of "${cleanWord}".` }
-            ],
-            whenToUse: parsed.whenToUse || [`When discussing ${cleanWord}`],
-            whenNotToUse: parsed.whenNotToUse || [`Do not use when speaking about unrelated matters`],
-            commonPhrases: [`Understanding ${cleanWord}`, `A key example of ${cleanWord}`],
-            synonyms: parsed.synonyms || [],
-            commonUseExample: parsed.commonUseExample,
-            memoryTip: parsed.memoryTip || `Remember: ${cleanWord.toUpperCase()} starts with '${cleanWord.charAt(0).toUpperCase()}'.`,
-            practiceQuestions: [
-              {
-                id: `${cleanWord}-q1`,
-                wordId: cleanWord,
-                type: 'multiple-choice',
-                question: `What is the meaning of "${cleanWord}"?`,
-                options: [primaryDef, 'An unrelated musical term', 'A mathematical constant'],
-                correctAnswerIndex: 0,
-                explanation: `"${cleanWord}" means: ${primaryDef}`
-              }
-            ]
-          };
-        }
+          ],
+          pronunciation: {
+            british: { ipa: parsed.ipa || `/ˈ${cleanWord}/`, phonetic: parsed.phonetic || cleanWord },
+            american: { ipa: parsed.ipa || `/ˈ${cleanWord}/`, phonetic: parsed.phonetic || cleanWord }
+          },
+          usage: {
+            isVerb: posList.includes('verb'),
+            explanation: parsed.usageExplanation || `"${cleanWord}" is used as a ${posList.join('/')}.`
+          },
+          examples: parsed.examples || [
+            { context: 'Everyday', sentence: `She used the word "${cleanWord}" in a normal conversation.` },
+            { context: 'Work', sentence: `The team applied "${cleanWord}" to their current project.` },
+            { context: 'Academic', sentence: `Scholars have analyzed the significance of "${cleanWord}".` }
+          ],
+          whenToUse: parsed.whenToUse || [`When discussing ${cleanWord}`],
+          whenNotToUse: parsed.whenNotToUse || [`Do not use when speaking about unrelated matters`],
+          commonPhrases: [`Understanding ${cleanWord}`, `A key example of ${cleanWord}`],
+          synonyms: parsed.synonyms || [],
+          commonUseExample: parsed.commonUseExample,
+          memoryTip: parsed.memoryTip || `Remember: ${cleanWord.toUpperCase()} starts with '${cleanWord.charAt(0).toUpperCase()}'.`,
+          practiceQuestions: [
+            {
+              id: `${cleanWord}-q1`,
+              wordId: cleanWord,
+              type: 'multiple-choice',
+              question: `What is the meaning of "${cleanWord}"?`,
+              options: [primaryDef, 'An unrelated musical term', 'A mathematical constant'],
+              correctAnswerIndex: 0,
+              explanation: `"${cleanWord}" means: ${primaryDef}`
+            }
+          ]
+        };
       }
     } catch (err) {
       console.warn('Gemini full word generation error', err);
@@ -287,39 +297,21 @@ Original Definition: "${definition}"
 
 Task: Generate a BRAND NEW, FRESH, and PRACTICAL layman breakdown for "${word}".
 Requirements:
-1. "simple": Write a direct, clear 5th-grade ELI5 explanation of what "${word}" means or does in real life. Use ONLY simple, everyday words that a 10-year-old child easily understands. DO NOT use strong, difficult, academic, or formal vocabulary (e.g. NEVER use words like "discordant", "dissonance", "manifestation", "predisposition", etc. — translate them into plain English like "harsh clashing noise", "sign", "natural tendency"). NEVER explain "${word}" using its root word or self-referential terms. DO NOT use generic boilerplate like 'It describes a real-life state' or 'At its heart'.
-2. "thinkOfItAs": Write an ACTIVE, VIVID real-world scene or analogy (e.g. for cacophony: 'Picture being trapped in a traffic jam where car horns blare, construction drills pound the pavement, and sirens scream all at once'). Start with an active verb phrase (like 'Picture...', 'Imagine...', 'Watching...'). NEVER say 'Observing X in real life'.
+1. "simple": Write a direct, clear 5th-grade ELI5 explanation of what "${word}" means or does in real life. Use ONLY simple, everyday words that a 10-year-old child easily understands. DO NOT use strong, difficult, academic, or formal vocabulary (e.g. NEVER use words like "discordant", "dissonance", "manifestation", "predisposition", etc. — translate them into plain English like "harsh clashing noise", "sign", "natural tendency"). NEVER copy the dictionary wording. NEVER explain "${word}" using its root word or self-referential terms. DO NOT use generic boilerplate like 'It describes a real-life state' or 'At its heart'.
+2. "thinkOfItAs": Write an ACTIVE, VIVID real-world scene or analogy starting with "Picture..." or "Imagine...". NEVER say 'Observing X in real life'.
 
 Return ONLY valid JSON:
 {"simple": "...", "thinkOfItAs": "..."}`;
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: {
-                temperature: 0.95,
-                maxOutputTokens: 1500
-              }
-            })
-          }
-        );
-
-        if (response.ok) {
-          const data: GeminiApiResponse = await response.json();
-          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (rawText) {
-            const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-            const parsed = JSON.parse(cleanedText);
-            if (parsed.simple && parsed.thinkOfItAs) {
-              return {
-                simple: parsed.simple,
-                thinkOfItAs: parsed.thinkOfItAs
-              };
-            }
+        const rawText = await this.callGeminiApi(prompt, 0.95, 1500);
+        if (rawText) {
+          const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(cleanedText);
+          if (parsed.simple && parsed.thinkOfItAs) {
+            return {
+              simple: parsed.simple,
+              thinkOfItAs: parsed.thinkOfItAs
+            };
           }
         }
       } catch (err) {
@@ -372,112 +364,60 @@ Return ONLY valid JSON:
       };
     }
 
-    let cleanDef = def
-      .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being|Exhibiting|A state of|The phenomenon of|The condition of)\s+/i, '')
-      .replace(/;\s*also\s*:.*$/i, '')
-      .replace(/[\.\s]+$/, '')
-      .trim();
+    let cleanDef = cleanDictionaryDefinition(def, word);
 
-    // Sanitize self-referential terms (e.g., parsimonious -> parsimony)
+    // Strip self-referential terms (e.g., parsimonious -> parsimony)
     if (cleanWord.startsWith('parsimon') && cleanDef.toLowerCase().includes('parsimony')) {
       cleanDef = 'extremely unwilling to spend money, use resources, or share';
     } else if (cleanWord === 'gourmand' && cleanDef.toLowerCase().includes('gourmand')) {
       cleanDef = 'a person who deeply loves eating good food and enjoys rich meals';
-    } else if (cleanDef.includes(';')) {
-      const clauses = cleanDef.split(';').map(c => c.trim()).filter(Boolean);
-      const rootPrefix = cleanWord.length > 4 ? cleanWord.slice(0, 4) : cleanWord;
-      const nonCircular = clauses.find(c => !c.toLowerCase().includes(rootPrefix));
-      if (nonCircular) cleanDef = nonCircular;
     }
 
-    // Vocabulary simplification
-    const commonReplacements: Record<string, string> = {
-      'discordant': 'harsh and clashing',
-      'dissonance': 'harsh, clashing noise',
-      'dissonant': 'harsh and clashing',
-      'cacophonous': 'noisy and harsh',
-      'cacophony': 'loud, harsh noise',
-      'acoustic': 'sound',
-      'acoustics': 'sound quality',
-      'clamor': 'loud, confusing noise',
-      'strident': 'harsh and grating',
-      'incongruous': 'out of place',
-      'phenomenon': 'event or occurrence',
-      'unplanned': 'accidental',
-      'unintended': 'not planned',
-      'unsought': 'unexpected',
-      'insightful': 'clever',
-      'recognition': 'noticing',
-      'circumstance': 'situation',
-      'circumstances': 'situations',
-      'counterempathy': 'lack of sympathy',
-      'malicious': 'mean-spirited',
-      'misfortune': 'bad luck',
-      'chivalric': 'hero-like',
-      'idealistic': 'dreamy and unrealistic',
-      'impractical': 'not realistic',
-      'superfluous': 'extra and unnecessary',
-      'mitigate': 'lessen the harm of',
-      'ameliorate': 'improve',
-      'exacerbate': 'make much worse',
-      'belligerent': 'ready to fight',
-      'pugnacious': 'eager to fight',
-      'magnanimous': 'generous and forgiving',
-      'ostentatious': 'flashy',
-      'precocious': 'talented at a young age',
-      'recalcitrant': 'stubbornly disobedient',
-      'myriad': 'countless number of',
-      'plethora': 'huge overload of',
-      'scarcity': 'shortage',
-      'frugal': 'careful with money',
-      'affluent': 'wealthy',
-      'destitute': 'extremely poor',
-      'transient': 'short-lived',
-      'audacious': 'bold and daring',
-      'trepidation': 'nervous fear',
-      'apprehension': 'worry',
-      'indolent': 'lazy',
-      'lethargic': 'tired and sluggish',
-      'vivacious': 'lively',
-      'euphoric': 'overjoyed',
-      'morose': 'gloomy',
-      'sycophant': 'flatterer'
-    };
-
-    Object.keys(commonReplacements).forEach(key => {
-      cleanDef = cleanDef.replace(new RegExp(`\\b${key}\\b`, 'gi'), commonReplacements[key]);
-    });
-
-    cleanDef = cleanDef.charAt(0).toLowerCase() + cleanDef.slice(1);
+    let simplified = simplifyFormalEnglish(cleanDef);
+    simplified = simplified.charAt(0).toLowerCase() + simplified.slice(1);
     const capWord = word.charAt(0).toUpperCase() + word.slice(1);
 
     const lowerDef = cleanDef.toLowerCase();
-    let think = `Picture a real-life situation where you experience ${cleanDef} firsthand.`;
-    if (lowerDef.includes('sound') || lowerDef.includes('noise') || lowerDef.includes('voice') || lowerDef.includes('clash') || lowerDef.includes('loud')) {
+    let think = `Imagine a real-life situation where ${simplified} comes into play and everyone notices.`;
+
+    if (lowerDef.includes('persuad') || lowerDef.includes('influence') || lowerDef.includes('rhetoric') || lowerDef.includes('debate') || lowerDef.includes('convince') || lowerDef.includes('argument')) {
+      think = `Picture a speaker choosing their words so cleverly that a room full of doubtful listeners nods in agreement.`;
+    } else if (lowerDef.includes('sound') || lowerDef.includes('noise') || lowerDef.includes('voice') || lowerDef.includes('clash') || lowerDef.includes('loud') || lowerDef.includes('dissonan')) {
       think = `Picture being in a noisy space where loud, clashing sounds overpower everything else.`;
     } else if (lowerDef.includes('time') || lowerDef.includes('brief') || lowerDef.includes('short') || lowerDef.includes('moment')) {
       think = `A quick flash of lightning on a dark night — here for a split second, then gone.`;
     } else if (lowerDef.includes('careful') || lowerDef.includes('detail') || lowerDef.includes('precise')) {
       think = `Inspecting every seam of a project under a bright lamp so not a single mistake slips through.`;
+    } else if (lowerDef.includes('strong') || lowerDef.includes('power') || lowerDef.includes('tough') || lowerDef.includes('recover')) {
+      think = `A sturdy palm tree bending almost flat against hurricane winds, then standing right back up once the storm clears.`;
     }
 
     if (pos === 'verb') {
-      const stripped = cleanDef.replace(/^to\s+/i, '');
+      const stripped = simplified.replace(/^to\s+/i, '');
       return {
         simple: `To ${word} means to ${stripped}.`,
         thinkOfItAs: think || `Imagine taking a deliberate step to ${stripped} right when it counts.`
       };
     } else if (pos === 'noun') {
-      const simpleText = (cleanDef.startsWith('a ') || cleanDef.startsWith('an ') || cleanDef.startsWith('the '))
-        ? `${capWord} is ${cleanDef}.`
-        : `${capWord} means ${cleanDef}.`;
+      let simpleText: string;
+      if (simplified.startsWith('the skill of ') || simplified.startsWith('the process of ') || simplified.startsWith('the feeling of ')) {
+        simpleText = `${capWord} is ${simplified}. In everyday life, it is all about how this is practiced or experienced.`;
+      } else if (simplified.startsWith('someone who ') || simplified.startsWith('a person who ')) {
+        simpleText = `A ${word} is ${simplified.replace(/^a person who /i, 'someone who ')}.`;
+      } else if (simplified.startsWith('a tool used to ') || simplified.startsWith('a device used to ')) {
+        simpleText = `A ${word} is ${simplified}.`;
+      } else if (simplified.startsWith('a ') || simplified.startsWith('an ') || simplified.startsWith('the ')) {
+        simpleText = `In simple English, ${word} is ${simplified}.`;
+      } else {
+        simpleText = `${capWord} refers to ${simplified}.`;
+      }
+
       return {
         simple: simpleText,
         thinkOfItAs: think
       };
     } else if (pos === 'adjective') {
-      const stripped = cleanDef.replace(/^(being|having|characterized by|marked by)\s+/i, '');
+      const stripped = simplified.replace(/^(being|having|characterized by|marked by|known for)\s+/i, '');
       return {
         simple: `When something or someone is ${word}, they are ${stripped}.`,
         thinkOfItAs: think || `Imagine encountering something that is completely ${stripped}.`
@@ -485,7 +425,7 @@ Return ONLY valid JSON:
     }
 
     return {
-      simple: `${capWord} means ${cleanDef}.`,
+      simple: `${capWord} means ${simplified}.`,
       thinkOfItAs: think
     };
   }
