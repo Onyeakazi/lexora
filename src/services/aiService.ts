@@ -64,6 +64,7 @@ ${synList ? `Target Synonyms to Explain: ${synList}` : ''}
 
 Task: Generate a rich, natural 5th-grade ELI5 plain English breakdown for "${entry.word}" and its synonyms.
 CRITICAL RULES FOR DEFINITION & EXAMPLES:
+0. "dictionaryDefinition": Write an accurate, standard, formal 1-sentence dictionary definition of "${entry.word}".
 1. "simple": Write a direct, conversational 5th-grade ELI5 explanation of what "${entry.word}" means and does in real life. NEVER explain a word using its root word or self-referential term (e.g. NEVER use 'parsimony' when explaining 'parsimonious', NEVER use '${entry.word}' in its own definition). Use plain, clear English (e.g. 'extremely unwilling to spend money, use resources, or share'). DO NOT use meta templates like 'At its heart' or 'Think of X as'.
 2. "thinkOfItAs": Write an ACTIVE real-life action phrase or vivid scenario describing what experiencing or doing this feels like (e.g., 'Watching someone carefully split a dinner bill down to the exact penny to avoid paying an extra dime'). Start with an active verb or vivid action phrase!
 3. "commonUseExample": Write a practical situational scenario or quoted dialogue showing how people actually use or experience the word (e.g., '\'I can\'t take the elevator, let\'s use the stairs.\' — Someone managing claustrophobia in a building.').
@@ -77,6 +78,7 @@ CRITICAL RULES FOR SYNONYMS:
 
 Return ONLY valid JSON in this exact structure without markdown backticks:
 {
+  "dictionaryDefinition": "Formal standard dictionary definition",
   "simple": "A clear, non-self-referential 5th-grade ELI5 explanation",
   "thinkOfItAs": "An active visual picture or action phrase",
   "commonUseExample": "An authentic situational sentence or quote",
@@ -117,7 +119,14 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
         if (rawText) {
           const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-          const parsed: AIErichedWordDetails & { examples?: WordEntry['examples'] } = JSON.parse(cleanedText);
+          const parsed: AIErichedWordDetails & { dictionaryDefinition?: string; examples?: WordEntry['examples'] } = JSON.parse(cleanedText);
+
+          if (parsed.dictionaryDefinition && (!entry.definitions[0]?.dictionary || entry.definitions[0].dictionary.startsWith('An English vocabulary term referring to'))) {
+            entry.definitions[0] = {
+              ...entry.definitions[0],
+              dictionary: parsed.dictionaryDefinition
+            };
+          }
 
           if (parsed.simple) {
             entry.definitions[0] = {
@@ -147,6 +156,118 @@ Return ONLY valid JSON in this exact structure without markdown backticks:
     }
 
     return entry;
+  },
+
+  // 1b. Full Word Entry AI Generation (Used when external dictionary APIs fail)
+  async generateFullWordWithAI(word: string): Promise<WordEntry | null> {
+    const apiKey = this.getApiKey();
+    if (!apiKey) return null;
+
+    const cleanWord = word.trim().toLowerCase();
+    try {
+      const prompt = `You are an authoritative master lexicographer for the Lexora dictionary app.
+Provide a complete, authentic dictionary entry for the English word or phrase: "${cleanWord}".
+
+Return ONLY valid JSON in this exact structure without markdown backticks:
+{
+  "partOfSpeech": ["noun"],
+  "dictionaryDefinition": "Formal authoritative 1-sentence dictionary definition of ${cleanWord}.",
+  "simple": "A clear, 5th-grade plain English explanation of what it means without self-referential definitions or jargon.",
+  "thinkOfItAs": "A vivid real-life action phrase or scenario representing ${cleanWord}.",
+  "ipa": "/ˈ${cleanWord}/",
+  "phonetic": "phonetic respelling",
+  "usageExplanation": "\"${cleanWord}\" functions as a ...",
+  "commonUseExample": "Authentic situational quote or sentence showing ${cleanWord}.",
+  "examples": [
+    { "context": "Everyday", "sentence": "Real-life sentence showing real people." },
+    { "context": "Work", "sentence": "Real workplace sentence showing real people at work." },
+    { "context": "Academic", "sentence": "Real academic/formal sentence." }
+  ],
+  "whenToUse": ["When to use bullet 1", "When to use bullet 2"],
+  "whenNotToUse": ["When not to use bullet 1", "When not to use bullet 2"],
+  "memoryTip": "A memorable 1-sentence mnemonic anchor",
+  "synonyms": [
+    {
+      "word": "synonym word",
+      "simpleDefinition": "Plain English definition of synonym",
+      "distinction": "5-10 word note comparing directly to ${cleanWord}"
+    }
+  ]
+}`;
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.6,
+              maxOutputTokens: 3500
+            }
+          })
+        }
+      );
+
+      if (response.ok) {
+        const data: GeminiApiResponse = await response.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (rawText) {
+          const cleanedText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(cleanedText);
+
+          const posList = (parsed.partOfSpeech || ['noun']).map((p: string) => p.toLowerCase());
+          const primaryDef = parsed.dictionaryDefinition || `Definition of ${cleanWord}.`;
+
+          return {
+            id: cleanWord,
+            word: cleanWord,
+            partOfSpeech: posList,
+            definitions: [
+              {
+                dictionary: primaryDef,
+                simple: parsed.simple || `${cleanWord} in plain terms.`,
+                thinkOfItAs: parsed.thinkOfItAs || `Picture ${cleanWord} in real life.`
+              }
+            ],
+            pronunciation: {
+              british: { ipa: parsed.ipa || `/ˈ${cleanWord}/`, phonetic: parsed.phonetic || cleanWord },
+              american: { ipa: parsed.ipa || `/ˈ${cleanWord}/`, phonetic: parsed.phonetic || cleanWord }
+            },
+            usage: {
+              isVerb: posList.includes('verb'),
+              explanation: parsed.usageExplanation || `"${cleanWord}" is used as a ${posList.join('/')}.`
+            },
+            examples: parsed.examples || [
+              { context: 'Everyday', sentence: `She used the word "${cleanWord}" in a normal conversation.` },
+              { context: 'Work', sentence: `The team applied "${cleanWord}" to their current project.` },
+              { context: 'Academic', sentence: `Scholars have analyzed the significance of "${cleanWord}".` }
+            ],
+            whenToUse: parsed.whenToUse || [`When discussing ${cleanWord}`],
+            whenNotToUse: parsed.whenNotToUse || [`Do not use when speaking about unrelated matters`],
+            commonPhrases: [`Understanding ${cleanWord}`, `A key example of ${cleanWord}`],
+            synonyms: parsed.synonyms || [],
+            commonUseExample: parsed.commonUseExample,
+            memoryTip: parsed.memoryTip || `Remember: ${cleanWord.toUpperCase()} starts with '${cleanWord.charAt(0).toUpperCase()}'.`,
+            practiceQuestions: [
+              {
+                id: `${cleanWord}-q1`,
+                wordId: cleanWord,
+                type: 'multiple-choice',
+                question: `What is the meaning of "${cleanWord}"?`,
+                options: [primaryDef, 'An unrelated musical term', 'A mathematical constant'],
+                correctAnswerIndex: 0,
+                explanation: `"${cleanWord}" means: ${primaryDef}`
+              }
+            ]
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Gemini full word generation error', err);
+    }
+    return null;
   },
 
   // 2. Layman Spin Generator (Used by the Spin AI Explanation button in Word Details)

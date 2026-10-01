@@ -37,6 +37,27 @@ interface DatamuseResult {
   defs?: string[];
 }
 
+interface WiktionaryDefItem {
+  definition: string;
+  parsedExamples?: { example: string; translation?: string }[];
+  examples?: string[];
+}
+
+interface WiktionarySection {
+  partOfSpeech: string;
+  language: string;
+  definitions: WiktionaryDefItem[];
+}
+
+interface WiktionaryResponse {
+  en?: WiktionarySection[];
+}
+
+function stripHtml(html: string): string {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+}
+
 const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
   'infrequently': 'not very often',
   'rarely': 'almost never',
@@ -209,6 +230,37 @@ function getFallbackSynonymDetails(synWord: string, mainWord: string): { simpleD
 }
 
 export const dictionaryService = {
+  isFallbackEntry(entry: WordEntry | null | undefined): boolean {
+    if (!entry || !entry.definitions || entry.definitions.length === 0) return true;
+    const def = (entry.definitions[0]?.dictionary || '').trim().toLowerCase();
+    const simple = (entry.definitions[0]?.simple || '').trim().toLowerCase();
+    const thinkOfItAs = (entry.definitions[0]?.thinkOfItAs || '').trim().toLowerCase();
+
+    return (
+      def.startsWith('an english vocabulary term referring to') ||
+      simple.includes('refers to a specific concept or object in plain english') ||
+      thinkOfItAs.startsWith('picture a clear real-life scenario representing')
+    );
+  },
+
+  purgeCorruptedCache(): void {
+    try {
+      const cache = storageService.get<Record<string, WordEntry>>(API_CACHE_KEY, {});
+      let changed = false;
+      Object.keys(cache).forEach(key => {
+        if (this.isFallbackEntry(cache[key])) {
+          delete cache[key];
+          changed = true;
+        }
+      });
+      if (changed) {
+        storageService.set(API_CACHE_KEY, cache);
+      }
+    } catch (e) {
+      // ignore
+    }
+  },
+
   getWordLocal(term: string): WordEntry | null {
     if (!term) return null;
     const cleanTerm = term.trim().toLowerCase();
@@ -224,7 +276,17 @@ export const dictionaryService = {
 
     // 3. Local IndexedDB / LocalStorage cache
     const cache = storageService.get<Record<string, WordEntry>>(API_CACHE_KEY, {});
-    return cache[cleanTerm] || null;
+    const cached = cache[cleanTerm];
+    if (cached) {
+      if (this.isFallbackEntry(cached)) {
+        // Automatically evict corrupted placeholder entry
+        delete cache[cleanTerm];
+        storageService.set(API_CACHE_KEY, cache);
+        return null;
+      }
+      return cached;
+    }
+    return null;
   },
 
   async fetchWithTimeout(url: string, timeoutMs: number = 4000): Promise<Response> {
@@ -309,7 +371,7 @@ export const dictionaryService = {
 
     // 1. Local sync match (0ms response)
     const local = this.getWordLocal(cleanTerm);
-    if (local) {
+    if (local && !this.isFallbackEntry(local)) {
       let enriched = await this.enrichSynonymsIfNeeded(local);
       if (aiService.isAIEnabled()) {
         enriched = await aiService.enrichWordEntryWithAI(enriched);
@@ -317,9 +379,28 @@ export const dictionaryService = {
       return enriched;
     }
 
-    // 2. Try Free Dictionary API with generous 4000ms timeout
+    // 2. Primary: Wiktionary REST API (High uptime, fast <300ms, comprehensive English definitions)
     try {
-      const response = await this.fetchWithTimeout(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`, 4000);
+      const wkResponse = await this.fetchWithTimeout(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(cleanTerm)}`, 3500);
+      if (wkResponse.ok) {
+        const wkData: WiktionaryResponse = await wkResponse.json();
+        const transformed = this.transformWiktionaryEntry(cleanTerm, wkData);
+        if (transformed && transformed.definitions.length > 0) {
+          let enriched = await this.enrichSynonymsIfNeeded(transformed);
+          if (aiService.isAIEnabled()) {
+            enriched = await aiService.enrichWordEntryWithAI(enriched);
+          }
+          this.cacheWord(cleanTerm, enriched);
+          return enriched;
+        }
+      }
+    } catch (e) {
+      console.warn('Wiktionary API lookup error/timeout', e);
+    }
+
+    // 3. Secondary: Free Dictionary API (rich phonetics and audio if available)
+    try {
+      const response = await this.fetchWithTimeout(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanTerm)}`, 2500);
       if (response.ok) {
         const data: ApiWordEntry[] = await response.json();
         if (data && data.length > 0) {
@@ -336,7 +417,7 @@ export const dictionaryService = {
       console.warn('Free Dictionary API lookup error/timeout', e);
     }
 
-    // 3. Backup: Datamuse API with generous 3500ms timeout
+    // 4. Tertiary: Datamuse API
     try {
       const dmResponse = await this.fetchWithTimeout(`https://api.datamuse.com/words?sp=${encodeURIComponent(cleanTerm)}&md=d&max=1`, 3500);
       if (dmResponse.ok) {
@@ -355,17 +436,30 @@ export const dictionaryService = {
       console.warn('Datamuse API fallback error/timeout', e);
     }
 
-    // 4. Fallback generator
+    // 5. Intelligent AI Generator (when external dictionary APIs fail or word is slang/modern)
+    if (aiService.isAIEnabled()) {
+      try {
+        const aiEntry = await aiService.generateFullWordWithAI(cleanTerm);
+        if (aiEntry && !this.isFallbackEntry(aiEntry)) {
+          this.cacheWord(cleanTerm, aiEntry);
+          return aiEntry;
+        }
+      } catch (e) {
+        console.warn('AI full word generation failed', e);
+      }
+    }
+
+    // 6. Emergency Fallback generator (NEVER cached into localStorage)
     let fallback = this.generateFallbackEntry(cleanTerm);
     fallback = await this.enrichSynonymsIfNeeded(fallback);
-    if (aiService.isAIEnabled()) {
-      fallback = await aiService.enrichWordEntryWithAI(fallback);
-    }
-    this.cacheWord(cleanTerm, fallback);
     return fallback;
   },
 
   cacheWord(term: string, entry: WordEntry): void {
+    if (!entry || this.isFallbackEntry(entry)) {
+      // NEVER cache a degraded fallback placeholder!
+      return;
+    }
     try {
       const cache = storageService.get<Record<string, WordEntry>>(API_CACHE_KEY, {});
       cache[term] = entry;
@@ -381,7 +475,7 @@ export const dictionaryService = {
 
     const offlineList = Object.values(OFFLINE_DICTIONARY_DATA);
     const cache = storageService.get<Record<string, WordEntry>>(API_CACHE_KEY, {});
-    const cachedList = Object.values(cache);
+    const cachedList = Object.values(cache).filter(w => !this.isFallbackEntry(w));
 
     const wordMap = new Map<string, WordEntry>();
     SAMPLE_WORDS.forEach(w => wordMap.set(w.word.toLowerCase(), w));
@@ -443,7 +537,7 @@ export const dictionaryService = {
 
   getAllWords(): WordEntry[] {
     const cachedObj = storageService.get<Record<string, WordEntry>>(API_CACHE_KEY, {});
-    const cachedList = Object.values(cachedObj);
+    const cachedList = Object.values(cachedObj).filter(w => !this.isFallbackEntry(w));
     return [...SAMPLE_WORDS, ...cachedList];
   },
 
@@ -676,6 +770,110 @@ export const dictionaryService = {
           options: [definitionsList[0]?.simple || primaryDefText, 'An ancient string instrument', 'Something completely unrelated'],
           correctAnswerIndex: 0,
           explanation: `"${word}" means: ${primaryDefText}`
+        }
+      ]
+    };
+  },
+
+  transformWiktionaryEntry(cleanWord: string, data: WiktionaryResponse): WordEntry | null {
+    const enSections = data.en || [];
+    if (!enSections || enSections.length === 0) return null;
+
+    const partsOfSpeech: PartOfSpeech[] = [];
+    const rawDefs: { pos: PartOfSpeech; def: string; examples?: string[] }[] = [];
+
+    for (const sec of enSections) {
+      const rawPos = (sec.partOfSpeech || '').toLowerCase();
+      let pos: PartOfSpeech = 'noun';
+      if (rawPos.includes('adj')) pos = 'adjective';
+      else if (rawPos.includes('verb')) pos = 'verb';
+      else if (rawPos.includes('adv')) pos = 'adverb';
+      else if (rawPos.includes('noun')) pos = 'noun';
+      else if (rawPos.includes('prep')) pos = 'preposition';
+      else if (rawPos.includes('conj')) pos = 'conjunction';
+
+      if (!partsOfSpeech.includes(pos)) partsOfSpeech.push(pos);
+
+      for (const d of sec.definitions || []) {
+        const cleaned = stripHtml(d.definition);
+        if (
+          cleaned &&
+          cleaned.length > 5 &&
+          !cleaned.toLowerCase().startsWith('inflection of') &&
+          !cleaned.toLowerCase().startsWith('plural of') &&
+          !cleaned.toLowerCase().startsWith('alternative form of')
+        ) {
+          const exList: string[] = [];
+          if (d.parsedExamples && d.parsedExamples.length > 0) {
+            d.parsedExamples.forEach(pe => {
+              const cleanEx = stripHtml(pe.example);
+              if (cleanEx) exList.push(cleanEx);
+            });
+          }
+          rawDefs.push({ pos, def: cleaned, examples: exList });
+        }
+      }
+    }
+
+    if (rawDefs.length === 0) return null;
+
+    const primaryPos = partsOfSpeech[0] || 'noun';
+    const isVerb = partsOfSpeech.includes('verb');
+
+    const definitionsList = rawDefs.slice(0, 3).map((d, index) => ({
+      dictionary: d.def.charAt(0).toUpperCase() + d.def.slice(1),
+      simple: this.generatePureSimpleEnglish(cleanWord, d.def, d.pos, []),
+      thinkOfItAs: this.generatePureVividMentalImage(cleanWord, d.def, d.pos, [], index)
+    }));
+
+    const primaryDefText = definitionsList[0]?.dictionary || `Definition of ${cleanWord}`;
+
+    const gatheredExamples: { context: 'Conversation' | 'Work' | 'Academic' | 'Everyday'; sentence: string }[] = [];
+    rawDefs.forEach(rd => {
+      if (rd.examples && rd.examples.length > 0) {
+        rd.examples.forEach(ex => {
+          if (gatheredExamples.length < 3 && !gatheredExamples.some(ge => ge.sentence === ex)) {
+            const ctx = gatheredExamples.length === 0 ? 'Everyday' : gatheredExamples.length === 1 ? 'Work' : 'Conversation';
+            gatheredExamples.push({ context: ctx, sentence: ex });
+          }
+        });
+      }
+    });
+
+    const authenticExamples = gatheredExamples.length >= 2
+      ? gatheredExamples
+      : this.generateAuthenticExamples(cleanWord, primaryPos, gatheredExamples);
+
+    return {
+      id: cleanWord,
+      word: cleanWord,
+      partOfSpeech: partsOfSpeech.length > 0 ? partsOfSpeech : ['noun'],
+      definitions: definitionsList,
+      pronunciation: {
+        british: { ipa: `/ˈ${cleanWord}/`, phonetic: this.generatePhoneticSpelling(cleanWord) },
+        american: { ipa: `/ˈ${cleanWord}/`, phonetic: this.generatePhoneticSpelling(cleanWord) }
+      },
+      usage: {
+        isVerb,
+        explanation: isVerb
+          ? `"${cleanWord}" is an action verb. Notice how its form changes when moving from present to past and future tenses.`
+          : `"${cleanWord}" functions as a ${partsOfSpeech.join('/')}. The word itself stays the same; the verb in your sentence sets the timing.`
+      },
+      examples: authenticExamples,
+      whenToUse: this.generateWhenToUse(cleanWord, primaryPos, []),
+      whenNotToUse: this.generateWhenNotToUse(cleanWord, primaryPos, []),
+      commonPhrases: this.generateCommonPhrases(cleanWord, primaryPos),
+      commonUseExample: this.generateCommonUseExample(cleanWord, primaryPos, primaryDefText, []),
+      memoryTip: this.generateMemoryTip(cleanWord, [], primaryDefText),
+      practiceQuestions: [
+        {
+          id: `${cleanWord}-q1`,
+          wordId: cleanWord,
+          type: 'multiple-choice',
+          question: `What does "${cleanWord}" mean in plain English?`,
+          options: [definitionsList[0]?.simple || primaryDefText, 'An ancient string instrument', 'Something completely unrelated'],
+          correctAnswerIndex: 0,
+          explanation: `"${cleanWord}" means: ${primaryDefText}`
         }
       ]
     };
@@ -1149,3 +1347,10 @@ export const dictionaryService = {
       .replace(/ing/gi, 'ing');
   }
 };
+
+try {
+  dictionaryService.purgeCorruptedCache();
+} catch (e) {
+  // safe fallback
+}
+

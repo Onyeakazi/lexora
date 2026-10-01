@@ -38,8 +38,22 @@ export default defineConfig({
         navigateFallback: '/index.html',
         runtimeCaching: [
           {
+            urlPattern: /^https:\/\/en\.wiktionary\.org\/api\/rest_v1\/page\/definition\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'wiktionary-api-cache',
+              expiration: {
+                maxEntries: 1000,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              },
+              cacheableResponse: {
+                statuses: [200]
+              }
+            }
+          },
+          {
             urlPattern: /^https:\/\/api\.dictionaryapi\.dev\/api\/v2\/entries\/en\/.*/i,
-            handler: 'CacheFirst',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'dictionary-api-cache',
               expiration: {
@@ -47,13 +61,13 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
-                statuses: [0, 200]
+                statuses: [200]
               }
             }
           },
           {
             urlPattern: /^https:\/\/api\.datamuse\.com\/.*/i,
-            handler: 'CacheFirst',
+            handler: 'NetworkFirst',
             options: {
               cacheName: 'datamuse-api-cache',
               expiration: {
@@ -61,7 +75,7 @@ export default defineConfig({
                 maxAgeSeconds: 60 * 60 * 24 * 30
               },
               cacheableResponse: {
-                statuses: [0, 200]
+                statuses: [200]
               }
             }
           }
