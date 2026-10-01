@@ -58,7 +58,82 @@ function stripHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
 }
 
-const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
+export const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
+  'discordant': 'harsh and clashing',
+  'dissonance': 'harsh, clashing sounds',
+  'dissonant': 'harsh and clashing',
+  'cacophonous': 'noisy and harsh',
+  'cacophony': 'loud, harsh clash of noises',
+  'acoustics': 'sound quality',
+  'acoustic': 'sound',
+  'clamor': 'loud, confusing noise',
+  'strident': 'harsh and grating',
+  'incongruous': 'out of place',
+  'incongruity': 'not fitting in',
+  'phenomenon': 'event or occurrence',
+  'unplanned': 'accidental',
+  'unintended': 'not planned',
+  'unsought': 'unexpected',
+  'insightful': 'clever and perceptive',
+  'recognition': 'noticing',
+  'circumstance': 'situation',
+  'circumstances': 'situations',
+  'chivalric': 'old-fashioned hero-like',
+  'idealistic': 'dreamy and unrealistic',
+  'impractical': 'not realistic',
+  'deliberately': 'on purpose',
+  'malicious': 'mean-spirited',
+  'misfortune': 'bad luck or trouble',
+  'counterempathy': 'lack of sympathy',
+  'superfluous': 'extra and unnecessary',
+  'anachronistic': 'out of place in time',
+  'proclivity': 'strong habit',
+  'propensity': 'natural tendency',
+  'predisposition': 'tendency',
+  'aberration': 'unusual difference',
+  'anomalous': 'unusual',
+  'anomaly': 'rare exception',
+  'pernicious': 'very harmful',
+  'esoteric': 'known to only a few people',
+  'lucid': 'clear and easy to understand',
+  'taciturn': 'quiet and rarely speaking',
+  'loquacious': 'very talkative',
+  'voracious': 'huge and greedy',
+  'ameliorate': 'make better',
+  'mitigate': 'lessen the harm of',
+  'alleviate': 'ease or relieve',
+  'exacerbate': 'make much worse',
+  'belligerent': 'hostile and ready to fight',
+  'pugnacious': 'eager to fight',
+  'benevolent': 'kind and caring',
+  'malevolent': 'mean and hateful',
+  'magnanimous': 'very generous and forgiving',
+  'ostentatious': 'flashy and showing off',
+  'precocious': 'advanced at a very young age',
+  'recalcitrant': 'stubbornly refusing to obey',
+  'epiphany': 'sudden "aha!" moment',
+  'zenith': 'highest peak',
+  'nadir': 'lowest point',
+  'myriad': 'countless number of',
+  'plethora': 'huge overload of',
+  'scarcity': 'shortage',
+  'frugal': 'careful with money',
+  'affluent': 'wealthy',
+  'indigent': 'very poor',
+  'destitute': 'having nothing',
+  'transient': 'lasting for only a short time',
+  'immutable': 'unchangeable',
+  'malleable': 'easy to bend or shape',
+  'tenacious': 'never giving up',
+  'audacious': 'bold and daring',
+  'trepidation': 'nervous fear',
+  'apprehension': 'worry about what is coming',
+  'indolent': 'lazy',
+  'lethargic': 'sluggish and lacking energy',
+  'vivacious': 'cheerful and lively',
+  'euphoric': 'overjoyed',
+  'morose': 'gloomy and grumpy',
+  'sycophant': 'flatterer or kiss-up',
   'infrequently': 'not very often',
   'rarely': 'almost never',
   'frequently': 'very often or regularly',
@@ -77,9 +152,6 @@ const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
   'diligent': 'hardworking and persistent',
   'eloquent': 'persuasive and moving in speech',
   'pragmatic': 'focused on practical results',
-  'benevolent': 'kind and generous toward others',
-  'audacious': 'bold and daring',
-  'lethargic': 'feeling sluggish and lacking energy',
   'scrutiny': 'close and critical inspection',
   'withstand': 'stay strong through',
   'adversity': 'hard times or difficulty',
@@ -115,6 +187,17 @@ const FORMAL_TO_SIMPLE_MAP: Record<string, string> = {
   'paramount': 'top priority',
   'predominant': 'main'
 };
+
+export function simplifyFormalEnglish(text: string): string {
+  if (!text) return '';
+  let result = text;
+  const sortedKeys = Object.keys(FORMAL_TO_SIMPLE_MAP).sort((a, b) => b.length - a.length);
+  for (const key of sortedKeys) {
+    const regex = new RegExp(`\\b${key}\\b`, 'gi');
+    result = result.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
+  }
+  return result;
+}
 
 const SYNONYM_DETAILS_MAP: Record<string, { simpleDefinition: string; distinction: string }> = {
   'offensive': {
@@ -1013,13 +1096,15 @@ export const dictionaryService = {
   },
 
   // PURE SIMPLE ENGLISH ENGINE — NO DICTIONARY JARGON OR SELF-REFERENTIAL RE-USE
-  generatePureSimpleEnglish(word: string, def: string, pos: string, synonyms: string[]): string {
+  generatePureSimpleEnglish(word: string, def: string, pos: string, _synonyms?: string[]): string {
     if (!def) return '';
 
     const cleanWord = word.toLowerCase();
 
     // Explicit 5th-grade translations for core terms
-    if (cleanWord === 'seldom') {
+    if (cleanWord === 'cacophony') {
+      return 'Cacophony means a loud, messy clash of harsh noises happening all at once, like car horns, construction drills, and shouting on a crowded street.';
+    } else if (cleanWord === 'seldom') {
       return 'Seldom means almost never, or not very often. If you seldom do something, it happens only once in a long while.';
     } else if (cleanWord === 'ephemeral') {
       return 'Ephemeral describes something that exists for only a brief moment before fading away, like a rainbow or a shooting star.';
@@ -1041,11 +1126,19 @@ export const dictionaryService = {
       return 'A gourmand is a person who deeply loves eating good food and truly enjoys rich, delicious meals.';
     } else if (cleanWord === 'parsimonious') {
       return 'Parsimonious describes someone who is extremely unwilling to spend money, use resources, or share.';
+    } else if (cleanWord === 'serendipity') {
+      return 'Serendipity means finding good or pleasant things by lucky accident, when you were not even looking for them.';
+    } else if (cleanWord === 'quixotic') {
+      return 'Quixotic describes ideas or plans that are wildly idealistic, romantic, and noble, but totally impractical in real life.';
+    } else if (cleanWord === 'schadenfreude') {
+      return 'Schadenfreude is the secret feeling of pleasure someone gets from seeing another person experience bad luck or embarrassment.';
+    } else if (cleanWord === 'defenestration') {
+      return 'Defenestration is the act of throwing someone or something out of a window.';
     }
 
     let cleanDef = def
       .replace(/^\s*\([^)]*\)\s*/g, '')
-      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being|Exhibiting)\s+/i, '')
+      .replace(/^(Relating to|Characterized by|The quality of|The act of|Having the nature of|State of being|Used to describe|In a manner that is|An abnormal fear of|A fear of|Extremely|Being|Exhibiting|A state of|The phenomenon of|The condition of)\s+/i, '')
       .replace(/;\s*also\s*:.*$/i, '')
       .replace(/[\.\s]+$/, '');
 
@@ -1060,29 +1153,28 @@ export const dictionaryService = {
       if (nonCircular) cleanDef = nonCircular;
     }
 
-    Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
-      const regex = new RegExp(`\\b${key}\\b`, 'gi');
-      cleanDef = cleanDef.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
-    });
+    cleanDef = simplifyFormalEnglish(cleanDef);
 
     cleanDef = cleanDef.charAt(0).toLowerCase() + cleanDef.slice(1);
     const capitalizeWord = word.charAt(0).toUpperCase() + word.slice(1);
 
     if (pos === 'adverb') {
-      return `${capitalizeWord} means doing an action in a ${cleanDef} manner.`;
+      const stripped = cleanDef.replace(/^(in a|in an)\s+/i, '').replace(/\s+(manner|way)$/i, '');
+      return `Doing something ${word} means doing it ${stripped}.`;
     } else if (pos === 'adjective') {
-      if (synonyms.length > 0 && synonyms[0] !== cleanWord) {
-        const simpleSyn = FORMAL_TO_SIMPLE_MAP[synonyms[0]] || synonyms[0];
-        return `${capitalizeWord} describes something that is ${simpleSyn}—meaning ${cleanDef}.`;
-      }
-      return `${capitalizeWord} describes someone or something that is ${cleanDef}.`;
+      const stripped = cleanDef.replace(/^(being|having|characterized by|marked by)\s+/i, '');
+      return `When something is ${word}, it is ${stripped}.`;
     } else if (pos === 'verb') {
-      return `To ${word} means to ${cleanDef}. It describes taking action directly.`;
+      const stripped = cleanDef.replace(/^to\s+/i, '');
+      return `To ${word} means to ${stripped}.`;
     } else if (pos === 'noun') {
-      return `${capitalizeWord} refers to ${cleanDef}. It describes a real-life state, person, or condition.`;
+      if (cleanDef.startsWith('a ') || cleanDef.startsWith('an ') || cleanDef.startsWith('the ')) {
+        return `${capitalizeWord} is ${cleanDef}.`;
+      }
+      return `${capitalizeWord} means ${cleanDef}.`;
     }
 
-    return `${capitalizeWord} refers to ${cleanDef}.`;
+    return `${capitalizeWord} means ${cleanDef}.`;
   },
 
   // PURE VIVID MENTAL IMAGE ENGINE — ZERO DICTIONARY REUSE
@@ -1091,58 +1183,73 @@ export const dictionaryService = {
     const lowerDef = def.toLowerCase();
 
     // Specific word overrides
-    if (cleanWord === 'seldom') {
-      return 'Think of how often it snows in the desert — it almost never happens.';
+    if (cleanWord === 'cacophony') {
+      return 'Picture being trapped in a traffic jam where car horns blare, jackhammers pound the pavement, and sirens scream all at once.';
+    } else if (cleanWord === 'seldom') {
+      return 'Think of how often it snows in a hot desert — it almost never happens.';
     } else if (cleanWord === 'ephemeral') {
-      return 'Think of a soap bubble floating in the air — it looks beautiful for a few seconds, then pops and vanishes.';
+      return 'Think of a shimmering soap bubble floating through the air — it looks beautiful for three seconds, then pops and vanishes.';
     } else if (cleanWord === 'resilient') {
-      return 'Think of a rubber ball — no matter how hard you throw it down, it bounces right back up.';
+      return 'Think of a rubber ball — no matter how hard you slam it into the pavement, it bounces right back into your hands.';
     } else if (cleanWord === 'ubiquitous') {
-      return 'Think of smartphones today — almost everyone carries one wherever you go.';
+      return 'Think of smartphones on a crowded morning train — almost everywhere you glance, someone is looking at one.';
     } else if (cleanWord === 'hypothetical') {
-      return 'Think of asking "What would you do if you won a million dollars?" — you are exploring an imagined scenario, not real cash yet.';
+      return 'Think of asking "What would you do if you won a million dollars?" — you are imagining a fun scenario, not spending real cash yet.';
     } else if (cleanWord === 'meticulous') {
-      return 'Think of a watchmaker carefully placing microscopic gears using tweezers, inspecting every single tooth.';
+      return 'Think of a watchmaker carefully placing microscopic gears using tiny tweezers and inspecting every notch with a magnifying glass.';
     } else if (cleanWord === 'diligent') {
-      return 'Think of an ant steadily carrying food back to the hill all afternoon without giving up.';
+      return 'Think of an ant steadily carrying crumbs across the sidewalk all afternoon without ever stopping or giving up.';
     } else if (cleanWord === 'eloquent') {
-      return 'Think of a speaker commanding a quiet auditorium where everyone pauses to listen because every word lands perfectly.';
+      return 'Think of a speaker whose words are so clear and moving that an entire restless room immediately goes quiet to listen.';
     } else if (cleanWord === 'pragmatic') {
-      return 'Think of choosing comfortable walking shoes for a long trek instead of stylish ones that hurt — prioritizing real results over appearance.';
+      return 'Think of choosing comfortable sneakers for a 10-mile walk instead of stylish shoes that give you blisters — prioritizing real comfort over appearance.';
     } else if (cleanWord === 'gourmand') {
-      return 'Imagining your friend at a big party trying a portion of every single delicious dish on the table and asking for seconds.';
+      return 'Imagining a friend at a big party happily tasting every dish on the buffet table and asking the host for the recipes.';
     } else if (cleanWord === 'parsimonious') {
-      return 'Watching someone carefully split a restaurant bill down to the exact penny to avoid paying an extra dime.';
+      return 'Watching someone split a group dinner check down to the exact penny so they don\'t overpay by a single cent.';
+    } else if (cleanWord === 'quixotic') {
+      return 'Imagining someone trying to stop a thunderstorm with a beach umbrella because they have a romantic belief they can do it.';
+    } else if (cleanWord === 'serendipity') {
+      return 'Reaching into an old winter coat pocket for a tissue and unexpectedly pulling out a 50-dollar bill you forgot you had.';
+    } else if (cleanWord === 'defenestration') {
+      return 'Watching someone dramatically heave a broken, smoking office printer straight out of a second-story window.';
+    } else if (cleanWord === 'schadenfreude') {
+      return 'Hiding a secret smile when a smug rival who boasted all week trips over their own shoelace.';
     }
 
-    // 1. Time / Frequency / Duration
+    // 1. Sound / Noise
+    if (lowerDef.includes('sound') || lowerDef.includes('noise') || lowerDef.includes('voice') || lowerDef.includes('music') || lowerDef.includes('loud') || lowerDef.includes('clash') || lowerDef.includes('tone') || lowerDef.includes('dissonan') || lowerDef.includes('discord')) {
+      return `Picture standing in a room where loud, clashing noises overpower everything else and you have to cover your ears.`;
+    }
+
+    // 2. Time / Frequency / Duration
     if (lowerDef.includes('time') || lowerDef.includes('short') || lowerDef.includes('long') || lowerDef.includes('brief') || lowerDef.includes('often') || lowerDef.includes('rare') || lowerDef.includes('infrequent')) {
-      return `A fleeting moment in time — something that happens in a flash and passes before you know it.`;
+      return `A quick flash of lightning on a dark night — here for a split second, then gone before you can blink.`;
     }
 
-    // 2. Care / Precision / Detail
+    // 3. Care / Precision / Detail
     if (lowerDef.includes('detail') || lowerDef.includes('careful') || lowerDef.includes('precise') || lowerDef.includes('thorough') || lowerDef.includes('attention')) {
-      return `Double-checking your work under a bright light to make sure not a single mistake slips through.`;
+      return `Inspecting every seam of a jacket under a bright magnifying lamp to make sure not a single loose thread is left.`;
     }
 
-    // 3. Speech / Communication / Sound
+    // 4. Speech / Communication
     if (lowerDef.includes('speech') || lowerDef.includes('talk') || lowerDef.includes('speak') || lowerDef.includes('word') || lowerDef.includes('express') || lowerDef.includes('voice')) {
-      return `Expressing a thought so clearly out loud that anyone listening understands your exact meaning instantly.`;
+      return `Telling a story so vividly around a campfire that everyone stops chatting and leans in to hear every word.`;
     }
 
-    // 4. Strength / Resistance / Flexibility
+    // 5. Strength / Resistance / Flexibility
     if (lowerDef.includes('strong') || lowerDef.includes('power') || lowerDef.includes('tough') || lowerDef.includes('recover') || lowerDef.includes('difficult')) {
-      return `A deep-rooted tree during a stormy gust — bending gracefully with the wind without breaking.`;
+      return `A sturdy palm tree bending almost flat against hurricane winds, then standing right back up once the storm clears.`;
     }
 
-    // 5. Mind / Thought / Ideas
+    // 6. Mind / Thought / Ideas
     if (lowerDef.includes('mind') || lowerDef.includes('idea') || lowerDef.includes('thought') || lowerDef.includes('reason') || lowerDef.includes('logic') || lowerDef.includes('believe')) {
-      return `Solving a puzzle in your mind by connecting pieces until the full picture makes complete sense.`;
+      return `Connecting the final two pieces of a difficult puzzle and suddenly seeing the whole picture come together.`;
     }
 
-    // 6. Generosity / Emotion / Heart
+    // 7. Generosity / Emotion / Heart
     if (lowerDef.includes('kind') || lowerDef.includes('give') || lowerDef.includes('generous') || lowerDef.includes('feeling') || lowerDef.includes('love') || lowerDef.includes('help')) {
-      return `Offering a warm umbrella to someone standing in the rain without asking for anything in return.`;
+      return `Holding an elevator door for someone running late with armfuls of groceries without them having to ask.`;
     }
 
     let cleanDef = def
@@ -1161,20 +1268,17 @@ export const dictionaryService = {
       if (nonCircular) cleanDef = nonCircular;
     }
 
-    Object.keys(FORMAL_TO_SIMPLE_MAP).forEach(key => {
-      const regex = new RegExp(`\\b${key}\\b`, 'gi');
-      cleanDef = cleanDef.replace(regex, FORMAL_TO_SIMPLE_MAP[key]);
-    });
+    cleanDef = simplifyFormalEnglish(cleanDef);
 
     if (pos === 'adverb') {
-      return `Performing an action ${cleanDef} in a real situation.`;
+      return `Picture someone handling a situation where they act ${cleanDef}.`;
     } else if (pos === 'adjective') {
-      return `Watching someone or something displaying ${cleanDef} in action.`;
+      return `Imagine walking into a room and discovering something that is completely ${cleanDef}.`;
     } else if (pos === 'verb') {
-      return `Taking a deliberate step to ${cleanDef} when it counts.`;
+      return `Imagine taking a deliberate step to ${cleanDef} right when it counts most.`;
     }
 
-    return `Observing ${cleanDef} in real life.`;
+    return `Picture a real-life moment when you experience ${cleanDef} firsthand.`;
   },
 
   generateWhenToUse(word: string, pos: string, synonyms: string[]): string[] {
